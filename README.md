@@ -1,46 +1,83 @@
-# Getting Started with Create React App
+# React Tree DnD
+Simple react tree with Drag and Drop.
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+![ReactDnDTree Preview](preview.gif "ReactDnDTree Preview")
 
-## Available Scripts
+*Read me* to be updated... Below a use case and relevant types
 
-In the project directory, you can run:
+Does not support touch events (yet)
+# Use case
 
-### `yarn start`
+```javascript
+function App() {
+  const { tree, setTree } = useDndTree({
+    id: "1",
+    children: [
+      { id: "4", title: "Nest" },
+      { id: "1", title: "You", directory: true, expanded: true, children: [
+          { id: "2", title: "Can" },
+          { id: "1", title: "You", directory: true, expanded: true, children: [
+              { id: "2", title: "Can" },
+              { id: "3", title: "Infinitely" },
+            ],
+          },
+        ],
+      },
+      { id: "5", title: "All" },
+      { id: "9", title: "Want" },
+    ],
+  });
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+  const onChange = (treeChildren: TreeNode[]) => {
+    setTree((old) => ({ ...old, children: treeChildren }));
+  };
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
-
-### `yarn test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `yarn build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `yarn eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+  
+  return (
+      <DnDSortableTree
+        tree={tree}
+        onChange={onChange}
+        renderer={(id) => (
+          <TreeNodeRendererDefault
+            key={id}
+            nodeId={id}
+            color="black"
+            iconColor="grey"
+          />
+        )}
+      />
+  );
+}
+```
+  
+# Relevant types
+                      
+```ts
+interface TreeIdentifier {
+  id: string;
+  children: TreeNode[];
+}
+interface TreeNodeBase {
+  id: string;
+  title: string;
+  directory: false;
+  data?: any;
+}
+interface TreeNodeDirectory extends TreeNodeBase {
+  directory: true;
+  expanded: boolean;
+  children: TreeNode[];
+}
+interface DnDSortableTreeProps extends Partial<TreeEvents> {
+  tree: TreeIdentifier;
+  renderer?: NodeRenderer;
+}
+interface TreeEvents {
+  onChange: (treeChildren: TreeNode[]) => void;
+  onClick: (node: TreeNode) => void;
+  onExpandedToggle: (node: TreeNode, expanded: boolean) => void;
+  onDragStateChange: (dragging: boolean, node?: TreeNode) => void;
+  onDropPositionChange: (target: NodeHovered | null) => void;
+}
+type NodeHovered = { nodeId: string; position: DropPosition | null };
+```
