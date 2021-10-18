@@ -1,10 +1,15 @@
+import React from "react";
 import { TreeNode } from ".";
+
+type AtLeast<T, K extends keyof T> = Partial<T> & Pick<T, K>;
 
 export interface TreeIdentifier {
   id: string;
   children: TreeNode[];
 }
-
+export type TreeNodeRefs = {
+  [key: string]: React.RefObject<HTMLDivElement>;
+};
 export interface TreeNodeBase {
   id: string;
   title: string;
@@ -18,17 +23,31 @@ export interface TreeNodeDirectory extends TreeNodeBase {
 }
 export type TreeNode = TreeNodeBase | TreeNodeDirectory;
 
-export type NodeRenderer = (id) => JSX.Element;
+export type NodeRenderer = React.FC<TreeNode>;
 
+export type DropLineInjectedStyles = {
+  top: number;
+  left: number;
+  position: "absolute";
+  width: number;
+  display: "block" | "none";
+  pointerEvents: "none";
+};
+
+export type DropLineRendererInjectedProps = {
+  injectedStyles?: DropLineInjectedStyles;
+};
+
+export type DropLineRenderer = React.FC<DropLineRendererInjectedProps>;
 export type TreeNodeRendererDefaultProps = {
   nodeId: string;
   color?: string;
   iconColor?: string;
 };
-
-export interface DnDSortableTreeProps extends Partial<TreeEvents> {
+export interface DnDSortableTreeProps extends TreeEvents {
   tree: TreeIdentifier;
-  renderer?: NodeRenderer;
+  renderer: NodeRenderer;
+  dropLineRenderer: DropLineRenderer;
 }
 
 export interface TreeContext {
@@ -36,11 +55,13 @@ export interface TreeContext {
   dragging: string | null;
   hovered: NodeHovered | null;
   drop: NodeDropped | null;
-  events: Partial<TreeEvents>;
+  events: TreeEvents;
+  refs: TreeNodeRefs;
 }
 
 export type NodeDropped = { nodeId: string; target: NodeHovered | null };
 export type NodeHovered = { nodeId: string; position: DropPosition | null };
+export type NodeDropPosition = NodeHovered; // alias
 
 export type TreeContextAction =
   | {
@@ -61,15 +82,15 @@ export type TreeContextAction =
       data: NodeDropped | null;
     }
   | {
-      type: "DIRECTORY_TOGGLE";
-      data: string;
+      type: "CHANGE_REFS";
+      data: { id: string; ref: React.RefObject<HTMLDivElement> };
     };
 
 export interface TreeEvents {
   onChange: (treeChildren: TreeNode[]) => void;
-  onClick: (node: TreeNode) => void;
-  onExpandedToggle: (node: TreeNode, expanded: boolean) => void;
-  onDragStateChange: (dragging: boolean, node?: TreeNode) => void;
-  onDropPositionChange: (target: NodeHovered | null) => void;
+  onClick?: (node: TreeNode) => void;
+  onExpandedToggle?: (node: TreeNode, expanded: boolean) => void;
+  onDragStateChange?: (dragging: boolean, node?: TreeNode) => void;
+  onDropPositionChange?: (target: NodeHovered | null) => void;
 }
 export type DropPosition = "top" | "bot" | "inside";

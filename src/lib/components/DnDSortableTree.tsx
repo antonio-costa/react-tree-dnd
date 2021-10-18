@@ -6,11 +6,14 @@ import React, {
   useEffect,
   useRef,
   useState,
+  useMemo,
+  useCallback,
 } from "react";
-import { editNode, getNode, moveNode } from "./helpers";
-import { TreeNodeRendererDefault } from "./TreeNodeRendererDefault";
+import { addNode, editNode, getNode, moveNode, removeNode } from "./helpers";
 import {
   DnDSortableTreeProps,
+  DropLineInjectedStyles,
+  NodeDropPosition,
   NodeHovered,
   TreeContext,
   TreeContextAction,
@@ -27,27 +30,28 @@ export const DnDTreeContext = createContext<
     dragging: null,
     hovered: null,
     drop: null,
-    events: {},
+    events: { onChange: () => {} },
+    refs: {},
   },
   () => {},
 ]);
 
-export const DnDSortableTree: React.VFC<DnDSortableTreeProps> = ({
+export const TreeDnD: React.VFC<DnDSortableTreeProps> = ({
   tree,
   onChange,
   onClick,
   onExpandedToggle,
   onDragStateChange,
   onDropPositionChange,
-  renderer,
+  renderer: NodeRenderer,
+  dropLineRenderer: DropLineRenderer,
 }) => {
   // keep track of old states so that events are only emitted if required
   const wasDragging = useRef<string | null>(null);
   const wasHovering = useRef<NodeHovered | null>(null);
-  const treeChildren = useRef<TreeNode[]>([]);
+  const parentRef = useRef<HTMLDivElement>(null);
 
   // loop through tree and render the nodes thorugh the renderer...
-
   const reducer = (state: TreeContext, action: TreeContextAction) => {
     switch (action.type) {
       case "CHANGE_TREE":
@@ -62,25 +66,15 @@ export const DnDSortableTree: React.VFC<DnDSortableTreeProps> = ({
         ).reduce((prev, curr) => {
           if (action.data[curr]) return { ...prev, [curr]: action.data[curr] };
           return prev;
-        }, {} as Partial<TreeEvents>);
+        }, {} as TreeEvents);
 
         return { ...state, events: { ...events } };
       case "DROP":
         return { ...state, drop: action.data };
-      case "DIRECTORY_TOGGLE":
-        const node = getNode(action.data, state.tree.children);
-        if (!node?.directory) return state;
-
-        const expanded = !node?.expanded;
-
-        if (expanded === undefined || expanded === null) return state;
-
+      case "CHANGE_REFS":
         return {
           ...state,
-          tree: {
-            ...state.tree,
-            children: editNode(action.data, { expanded }, state.tree.children),
-          },
+          refs: { ...state.refs, [action.data.id]: action.data.ref },
         };
     }
   };
@@ -92,9 +86,15 @@ export const DnDSortableTree: React.VFC<DnDSortableTreeProps> = ({
       dragging: null,
       hovered: null,
       drop: null,
-      events: {},
+      events: { onChange: () => {} },
+      refs: {},
     }
   );
+  // change tree state
+  useEffect(() => {
+    dispatch({ type: "CHANGE_TREE", data: tree });
+  }, [tree, dispatch]);
+
   // emit events
   // emit event onDropPositionChange
   useEffect(() => {
@@ -104,6 +104,7 @@ export const DnDSortableTree: React.VFC<DnDSortableTreeProps> = ({
         state.hovered?.position === wasHovering.current?.position)
     )
       return;
+
     if (state.events.onDropPositionChange) {
       if (state.hovered) {
         state.events.onDropPositionChange({
@@ -114,6 +115,7 @@ export const DnDSortableTree: React.VFC<DnDSortableTreeProps> = ({
         state.events.onDropPositionChange(null);
       }
     }
+
     wasHovering.current = state.hovered;
   }, [state.events, state.hovered]);
 
@@ -132,33 +134,12 @@ export const DnDSortableTree: React.VFC<DnDSortableTreeProps> = ({
     wasDragging.current = state.dragging;
   }, [state.events, state.dragging, state.tree.children]);
 
-  // update tree
-  useEffect(() => {
-    dispatch({ type: "CHANGE_TREE", data: tree });
-  }, [tree]);
-
-  useEffect(() => {
-    // make sure that the "previous" tree is up to date
-    treeChildren.current = state.tree.children;
-  }, [state.tree.children]);
-
   // item is dropped for 1 tick, then it's removed
   useEffect(() => {
-    let newTreeChildren = state.tree.children;
-
     // move node if it was dropped
     if (state.drop) {
       dispatch({ type: "DROP", data: null });
-      newTreeChildren = moveNode(state.drop, state.tree.children);
-    }
-
-    // if the tree has changed, trigger onChange event
-    if (
-      JSON.stringify(treeChildren.current) !== JSON.stringify(newTreeChildren)
-    ) {
-      if (state.events.onChange) {
-        state.events.onChange(newTreeChildren);
-      }
+      state.events.onChange(moveNode(state.drop, state.tree.children));
     }
   }, [state.drop, state.events, state.tree.children]);
 
@@ -182,20 +163,63 @@ export const DnDSortableTree: React.VFC<DnDSortableTreeProps> = ({
     onDropPositionChange,
   ]);
 
+  const dropLineInjectedStyles: DropLineInjectedStyles = useMemo(() => {
+    const noDropLine: DropLineInjectedStyles = {
+      position: "absolute",
+      display: "none",
+      top: 0,
+      left: 0,
+      width: 0,
+      pointerEvents: "none",
+    };
+    if (state.hovered?.nodeId) {
+      const targetEl = state.refs[state.hovered?.nodeId].current;
+      const rootEl = parentRef.current;
+      if (!targetEl || !rootEl || state.hovered.position === "inside")
+        return noDropLine;
+
+      const rootRect = rootEl.getBoundingClientRect();
+      const targetRect = targetEl.getBoundingClientRect();
+
+      const height: number =
+        state.hovered.position === "top" ? 0 : targetEl.offsetHeight;
+      const width: number = targetEl.offsetWidth;
+
+      return {
+        position: "absolute",
+        display: "block",
+        left: targetRect.left - rootRect.left,
+        top: targetRect.top - rootRect.top + height,
+        width,
+        pointerEvents: "none",
+      };
+    }
+    return noDropLine;
+  }, [state.hovered, state.refs]);
+
+  const onDragLeave = useCallback(() => {
+    dispatch({ type: "CHANGE_HOVERED", data: null });
+  }, [dispatch]);
+
   return (
     <DnDTreeContext.Provider value={[state, dispatch]}>
-      {tree.children.map((node) =>
-        renderer ? (
-          renderer(node.id)
-        ) : (
-          <TreeNodeRendererDefault key={node.id} nodeId={node.id} />
-        )
-      )}
+      <div
+        onDragLeave={onDragLeave}
+        style={{ position: "relative" }}
+        ref={parentRef}
+      >
+        {tree.children.map((node) => (
+          <NodeRenderer {...node} key={node.id} />
+        ))}
+        {state.hovered?.nodeId ? (
+          <DropLineRenderer injectedStyles={{ ...dropLineInjectedStyles }} />
+        ) : null}
+      </div>
     </DnDTreeContext.Provider>
   );
 };
 
-export const useDndTreeState = (): [
+export const useTreeDnDState = (): [
   TreeContext,
   React.Dispatch<TreeContextAction>
 ] => {
@@ -203,12 +227,34 @@ export const useDndTreeState = (): [
   return [state, dispatch];
 };
 
-export const useDndTree = (defaultValue: TreeIdentifier) => {
+export const useTreeDnD = (defaultValue: TreeIdentifier) => {
   const [tree, setTree] = useState<TreeIdentifier>(defaultValue);
   return {
     tree,
     setTree,
-    addNode: () => {},
-    removeNode: () => {},
+    addNode: (node: TreeNode, position: NodeDropPosition) => {
+      setTree((old) => ({
+        ...old,
+        children: addNode(node, position, old.children),
+      }));
+    },
+    moveNode: (nodeId: string, position: NodeDropPosition) => {
+      setTree((old) => ({
+        ...old,
+        children: moveNode({ nodeId, target: position }, old.children),
+      }));
+    },
+    editNode: (nodeId: string, data: Partial<TreeNode>) => {
+      setTree((old) => ({
+        ...old,
+        children: editNode(nodeId, data, old.children),
+      }));
+    },
+    removeNode: (nodeId: string) => {
+      setTree((old) => ({
+        ...old,
+        children: removeNode(nodeId, old.children),
+      }));
+    },
   };
 };

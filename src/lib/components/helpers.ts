@@ -12,7 +12,19 @@ export const getNode = (
     return null;
   }, null as TreeNode | null);
 };
+export const getParent = (
+  nodeId: string,
+  treeChildren: TreeNode[],
+  parent: TreeNode | null = null
+): TreeNode | null => {
+  return treeChildren.reduce((prev, curr) => {
+    if (prev) return prev;
+    if (curr.id === nodeId) return parent;
+    if (curr.directory) return getParent(nodeId, curr.children, curr);
 
+    return null;
+  }, null as TreeNode | null);
+};
 export const nodeIsParent = (
   nodeId: string,
   childId: string,
