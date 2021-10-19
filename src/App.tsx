@@ -1,9 +1,5 @@
 import React, { useRef } from "react";
-import {
-  TreeDnD,
-  useTreeDnD,
-  useTreeDnDState,
-} from "./lib/components/DnDSortableTree";
+import { TreeDnD, useTreeDnD, useTreeDnDState } from "./lib/components/TreeDnD";
 import { TreeNodeDraggable } from "./lib/components/TreeNodeDraggable";
 import {
   DropLineRendererInjectedProps,
@@ -30,22 +26,29 @@ function App() {
       },
       { id: "4", title: "Nest" },
       { id: "5", title: "All" },
-      {
-        id: "6",
-        title: "Of",
-        directory: true,
-        expanded: true,
-        children: [
-          { id: "10", title: "These" },
-          { id: "11", title: "Items" },
-        ],
-      },
-      { id: "7", title: "If" },
-      { id: "8", title: "Wou" },
-      { id: "9", title: "Want" },
     ],
   });
 
+  const { tree: tree2, setTree: setTree2 } = useTreeDnD({
+    id: "2",
+    children: [
+      {
+        id: "123",
+        title: "You",
+        directory: true,
+        expanded: false,
+        children: [
+          { id: "2", title: "Can" },
+          { id: "3", title: "Infinitely" },
+        ],
+      },
+      { id: "4", title: "Nest" },
+      { id: "5", title: "All" },
+    ],
+  });
+  const onChange2 = (treeChildren: TreeNode[]) => {
+    setTree2((old) => ({ ...old, children: treeChildren }));
+  };
   const onChange = (treeChildren: TreeNode[]) => {
     setTree((old) => ({ ...old, children: treeChildren }));
   };
@@ -54,6 +57,13 @@ function App() {
       <TreeDnD
         tree={tree}
         onChange={onChange}
+        renderer={Node}
+        dropLineRenderer={DropLine}
+      />
+      ----
+      <TreeDnD
+        tree={tree2}
+        onChange={onChange2}
         renderer={Node}
         dropLineRenderer={DropLine}
       />

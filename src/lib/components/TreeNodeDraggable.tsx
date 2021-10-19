@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, memo } from "react";
-import { useTreeDnDState } from "./DnDSortableTree";
+import { useTreeDnDState } from "./TreeDnD";
 import {
   editNode,
   isDirectory,
@@ -7,16 +7,7 @@ import {
   isDirectoryExpanded,
   nodeIsParent,
 } from "./helpers";
-import { DropPosition, TreeNode } from "./types";
-
-interface TreeNodeDraggableProps {
-  handleRef?: React.MutableRefObject<HTMLElement | null>;
-  expandRef?: React.MutableRefObject<HTMLElement | null>;
-  previewRef?: React.MutableRefObject<HTMLElement | null>;
-  dropRef?: React.MutableRefObject<HTMLElement | null>;
-  clickRef?: React.MutableRefObject<HTMLElement | null>;
-  node: TreeNode;
-}
+import { DropPosition, TreeNodeDraggableProps } from "./types";
 
 export const TreeNodeDraggable: React.FC<
   TreeNodeDraggableProps & React.HTMLProps<HTMLDivElement>
@@ -34,6 +25,15 @@ export const TreeNodeDraggable: React.FC<
     const ref = useRef<HTMLDivElement>(null);
     const [draggable, setDraggable] = useState<boolean>(false);
     const [state, dispatch] = useTreeDnDState();
+
+    useEffect(() => {
+      console.log(
+        "changed drag state to",
+        state.dragging,
+        "for tree",
+        state.tree.id
+      );
+    }, [state.tree.id, state.dragging]);
 
     useEffect(() => {
       if (!ref.current) return;
@@ -131,7 +131,7 @@ export const TreeNodeDraggable: React.FC<
     const DraggableProps: React.HTMLAttributes<HTMLDivElement> = {
       draggable,
       onDrop: (e: React.DragEvent) => {
-        // don't trigger self and don't execute if not dragging explicitly
+        // only execute if dragging in this context
         if (!state.dragging) return;
 
         // update context stopped dragging and hovering
@@ -145,18 +145,19 @@ export const TreeNodeDraggable: React.FC<
         }
       },
       onDragEnd: (e: React.DragEvent) => {
+        // only execute if dragging in this context
+        if (!state.dragging) return;
+
         if (handleRef?.current) {
           setDraggable(false);
         }
 
         // update context stopped dragging and hovering
-        if (state.hovered?.nodeId === node.id) {
-          dispatch({ type: "CHANGE_HOVERED", data: null });
-          dispatch({ type: "CHANGE_DRAGGING", data: null });
-        }
+        dispatch({ type: "CHANGE_HOVERED", data: null });
+        dispatch({ type: "CHANGE_DRAGGING", data: null });
       },
       onDragOver: (e: React.DragEvent) => {
-        // don't trigger self and don't execute if not dragging explicitly
+        // don't trigger self and don't execute if not dragging in this context
         if (!state.dragging) return;
         if (state.dragging === node.id) return;
         // only the shallowest child should be triggered
