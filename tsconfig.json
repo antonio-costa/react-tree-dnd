@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "outDir": "dist",
     "target": "es5",
     "lib": [
       "dom",
@@ -18,9 +19,17 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "declaration": true
   },
+  "files": [
+    "src/custom.d.ts"
+  ],
   "include": [
-    "src"
+    "src/lib",
+    "src/custom.d.ts"
+  ],
+  "exclude": [
+    "node_modules"
   ]
 }

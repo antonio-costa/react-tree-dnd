@@ -1,7 +1,4 @@
 import React from "react";
-import { TreeNode } from ".";
-
-type AtLeast<T, K extends keyof T> = Partial<T> & Pick<T, K>;
 
 export interface TreeIdentifier {
   id: string;
@@ -13,11 +10,14 @@ export type TreeNodeRefs = {
 export interface TreeNodeBase {
   id: string;
   title: string;
-  directory: false;
+  directory?: false;
   data?: any;
 }
-export interface TreeNodeDirectory extends TreeNodeBase {
+export interface TreeNodeDirectory {
+  id: string;
+  title: string;
   directory: true;
+  data?: any;
   expanded: boolean;
   children: TreeNode[];
 }
@@ -39,11 +39,7 @@ export type DropLineRendererInjectedProps = {
 };
 
 export type DropLineRenderer = React.FC<DropLineRendererInjectedProps>;
-export type TreeNodeRendererDefaultProps = {
-  nodeId: string;
-  color?: string;
-  iconColor?: string;
-};
+
 export interface DnDSortableTreeProps extends TreeEvents {
   tree: TreeIdentifier;
   renderer: NodeRenderer;
@@ -94,3 +90,11 @@ export interface TreeEvents {
   onDropPositionChange?: (target: NodeHovered | null) => void;
 }
 export type DropPosition = "top" | "bot" | "inside";
+export interface TreeNodeDraggableProps {
+  handleRef?: React.MutableRefObject<HTMLElement | null>;
+  expandRef?: React.MutableRefObject<HTMLElement | null>;
+  previewRef?: React.MutableRefObject<HTMLElement | null>;
+  dropRef?: React.MutableRefObject<HTMLElement | null>;
+  clickRef?: React.MutableRefObject<HTMLElement | null>;
+  node: TreeNode;
+}
