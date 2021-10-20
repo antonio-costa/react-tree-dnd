@@ -197,13 +197,19 @@ export const TreeDnD: React.VFC<DnDSortableTreeProps> = ({
     return noDropLine;
   }, [state.hovered, state.refs]);
 
-  const onDragLeave = useCallback(() => {
-    dispatch({ type: "CHANGE_HOVERED", data: null });
-  }, [dispatch]);
+  const onDragLeave = useCallback(
+    (e: React.DragEvent) => {
+      if ((e.relatedTarget as HTMLElement).contains(parentRef.current)) {
+        dispatch({ type: "CHANGE_HOVERED", data: null });
+      }
+    },
+    [dispatch]
+  );
 
   return (
     <DnDTreeContext.Provider value={[state, dispatch]}>
       <div
+        className="root"
         onDragLeave={onDragLeave}
         style={{ position: "relative" }}
         ref={parentRef}

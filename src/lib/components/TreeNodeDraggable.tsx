@@ -27,15 +27,6 @@ export const TreeNodeDraggable: React.FC<
     const [state, dispatch] = useTreeDnDState();
 
     useEffect(() => {
-      console.log(
-        "changed drag state to",
-        state.dragging,
-        "for tree",
-        state.tree.id
-      );
-    }, [state.tree.id, state.dragging]);
-
-    useEffect(() => {
       if (!ref.current) return;
       dispatch({ type: "CHANGE_REFS", data: { id: node.id, ref } });
     }, [ref, dispatch, node.id]);
@@ -140,6 +131,7 @@ export const TreeNodeDraggable: React.FC<
             type: "DROP",
             data: { nodeId: state.dragging, target: state.hovered },
           });
+
           dispatch({ type: "CHANGE_HOVERED", data: null });
           dispatch({ type: "CHANGE_DRAGGING", data: null });
         }
@@ -151,24 +143,23 @@ export const TreeNodeDraggable: React.FC<
         if (handleRef?.current) {
           setDraggable(false);
         }
-
         // update context stopped dragging and hovering
         dispatch({ type: "CHANGE_HOVERED", data: null });
         dispatch({ type: "CHANGE_DRAGGING", data: null });
+      },
+      onDragEnter: (e: React.DragEvent) => {
+        e.preventDefault();
       },
       onDragOver: (e: React.DragEvent) => {
         // don't trigger self and don't execute if not dragging in this context
         if (!state.dragging) return;
         if (state.dragging === node.id) return;
-        // only the shallowest child should be triggered
-        e.stopPropagation();
         // can't hover if dragging node is parent of this
         if (nodeIsParent(state.dragging, node.id, state.tree.children)) return;
         // only the shallowest child should be triggered
         e.stopPropagation();
         // droppable
         e.preventDefault();
-
         // where it is being dragged over (top or bot 50%)
         // mouse position relating to box position:
         const elRect = e.currentTarget.getBoundingClientRect();
