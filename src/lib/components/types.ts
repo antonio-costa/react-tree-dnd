@@ -40,10 +40,16 @@ export type DropLineRendererInjectedProps = {
 
 export type DropLineRenderer = React.FC<DropLineRendererInjectedProps>;
 
-export interface DnDSortableTreeProps extends TreeEvents {
+export interface TreeDnDProps extends TreeEvents {
   tree: TreeIdentifier;
   renderer: NodeRenderer;
   dropLineRenderer: DropLineRenderer;
+  /**
+   * Classname to be added when a directory is being hovered
+   * and is either collapsed or has no items
+   * (make sure this class name is completely unique)
+   */
+  directoryHoveredClass?: string;
 }
 
 export interface TreeContext {

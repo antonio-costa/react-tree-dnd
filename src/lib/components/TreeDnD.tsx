@@ -9,9 +9,9 @@ import React, {
   useMemo,
   useCallback,
 } from "react";
+import { TreeDnDProps } from "..";
 import { addNode, editNode, getNode, moveNode, removeNode } from "./helpers";
 import {
-  DnDSortableTreeProps,
   DropLineInjectedStyles,
   NodeDropPosition,
   NodeHovered,
@@ -36,7 +36,7 @@ export const DnDTreeContext = createContext<
   () => {},
 ]);
 
-export const TreeDnD: React.VFC<DnDSortableTreeProps> = ({
+export const TreeDnD: React.VFC<TreeDnDProps> = ({
   tree,
   onChange,
   onClick,
@@ -45,6 +45,7 @@ export const TreeDnD: React.VFC<DnDSortableTreeProps> = ({
   onDropPositionChange,
   renderer: NodeRenderer,
   dropLineRenderer: DropLineRenderer,
+  directoryHoveredClass,
 }) => {
   // keep track of old states so that events are only emitted if required
   const wasDragging = useRef<string | null>(null);
@@ -96,15 +97,30 @@ export const TreeDnD: React.VFC<DnDSortableTreeProps> = ({
   }, [tree, dispatch]);
 
   // emit events
-  // emit event onDropPositionChange
+  // onDropPositionChange
   useEffect(() => {
+    // check if there was any change to the hovered element
+    // (this avoid any false triggers made by state.events or state.refs)
     if (
       state.hovered === wasHovering.current ||
       (state.hovered?.nodeId === wasHovering.current?.nodeId &&
         state.hovered?.position === wasHovering.current?.position)
     )
       return;
+    // if dragged "inside" a directory
+    if (directoryHoveredClass) {
+      // remove all existing stylings
+      document
+        .querySelector("." + directoryHoveredClass)
+        ?.classList.remove(directoryHoveredClass);
+      // re-add stylings if it is hovering "inside" de node
+      if (state.hovered?.position === "inside") {
+        const hoveredRef = state.refs[state.hovered?.nodeId]?.current;
+        hoveredRef?.classList.add(directoryHoveredClass);
+      }
+    }
 
+    // emit onDropPositionChange
     if (state.events.onDropPositionChange) {
       if (state.hovered) {
         state.events.onDropPositionChange({
@@ -117,7 +133,7 @@ export const TreeDnD: React.VFC<DnDSortableTreeProps> = ({
     }
 
     wasHovering.current = state.hovered;
-  }, [state.events, state.hovered]);
+  }, [state.events, state.hovered, directoryHoveredClass, state.refs]);
 
   // emit event onDragStateChange
   useEffect(() => {

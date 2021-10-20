@@ -1,32 +1,37 @@
-import React, { useRef } from "react";
-import { TreeDnD, useTreeDnD, useTreeDnDState } from "./lib/components/TreeDnD";
+import React, { memo, useRef } from "react";
+import { TreeDnD, useTreeDnD } from "./lib/components/TreeDnD";
 import { TreeNodeDraggable } from "./lib/components/TreeNodeDraggable";
 import {
   DropLineRendererInjectedProps,
   TreeNode,
 } from "./lib/components/types";
 
+import "./styles.css";
+
 import { ReactComponent as IconFolder } from "./lib/components/svg/folder.svg";
 import { ReactComponent as IconFolderOpen } from "./lib/components/svg/folder-open.svg";
 import { ReactComponent as IconFile } from "./lib/components/svg/file.svg";
 
+const stressTest: TreeNode[] = Array.from(Array(100).keys()).map((id) =>
+  id % 2
+    ? {
+        id: "" + id,
+        title: "Title for " + id,
+        directory: false,
+      }
+    : {
+        id: "" + id,
+        title: "Title for " + id,
+        directory: true,
+        expanded: true,
+        children: [],
+      }
+);
+
 function App() {
   const { tree, setTree } = useTreeDnD({
     id: "1",
-    children: [
-      {
-        id: "123",
-        title: "You",
-        directory: true,
-        expanded: false,
-        children: [
-          { id: "2", title: "Can" },
-          { id: "3", title: "Infinitely" },
-        ],
-      },
-      { id: "4", title: "Nest" },
-      { id: "5", title: "All" },
-    ],
+    children: stressTest,
   });
 
   const { tree: tree2, setTree: setTree2 } = useTreeDnD({
@@ -59,6 +64,7 @@ function App() {
         onChange={onChange}
         renderer={Node}
         dropLineRenderer={DropLine}
+        directoryHoveredClass={"directory-hovered"}
       />
       ----
       <TreeDnD
@@ -71,13 +77,9 @@ function App() {
   );
 }
 
-const Node: React.FC<TreeNode> = (node) => {
+const Node: React.FC<TreeNode> = React.memo((node) => {
   const expandRef = useRef<HTMLDivElement>(null);
-
-  const [state] = useTreeDnDState();
-  const directoryHovered =
-    state.hovered?.nodeId === node.id && state.hovered.position === "inside";
-
+  console.log("re-render");
   const icon_size = 12;
 
   const NodeIcon = !node.directory
@@ -96,7 +98,6 @@ const Node: React.FC<TreeNode> = (node) => {
           fontSize: 12,
           fontFamily: "arial",
           padding: 2,
-          border: "2px solid " + (directoryHovered ? "orange" : "transparent"),
         }}
         ref={expandRef}
       >
@@ -116,7 +117,7 @@ const Node: React.FC<TreeNode> = (node) => {
       </div>
     </TreeNodeDraggable>
   );
-};
+});
 const DropLine: React.FC<DropLineRendererInjectedProps> = (props) => {
   return (
     <div
