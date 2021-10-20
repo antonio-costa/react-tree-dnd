@@ -1,16 +1,25 @@
 # React Tree DnD
+
 Simple react tree with Drag and Drop.
 
 ![ReactDnDTree Preview](preview.gif "ReactDnDTree Preview")
 
-*Read me* to be updated...
+_Read me_ to be updated...
 
 ### To do
-- Add touch support
-- Add custom placeholder support
+
+- **[PRIORITY]** Enhance performance for long lists. Performance bottleneck is on drop line, which triggers a whole context update everytime there's a change in the drop position while dragging
+- **[uncertain??]** Remove from exports context state (useTreeDnDState) as it is too unperformant to use.
+
+###
+
+- **[2.0.0]** Add touch support
+- **[2.0.0]** Add custom placeholder support through a new _placeholderRenderer_ prop
 
 # Use case
+
 ## Tree
+
 ```javascript
 const { tree, setTree } = useTreeDnD({
   id: "1",
@@ -57,7 +66,9 @@ return (
   </div>
 );
 ```
+
 ## Node Renderer
+
 ```typescript
 const Node: React.FC<TreeNode> = (node) => {
   const expandRef = useRef<HTMLDivElement>(null);
@@ -106,7 +117,9 @@ const Node: React.FC<TreeNode> = (node) => {
   );
 };
 ```
+
 ## DropLine Renderer
+
 ```typescript
 const DropLine: React.FC<DropLineRendererInjectedProps> = (props) => {
   return (
