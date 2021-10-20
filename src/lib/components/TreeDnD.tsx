@@ -199,7 +199,7 @@ export const TreeDnD: React.VFC<DnDSortableTreeProps> = ({
 
   const onDragLeave = useCallback(
     (e: React.DragEvent) => {
-      if ((e.relatedTarget as HTMLElement).contains(parentRef.current)) {
+      if ((e.relatedTarget as HTMLElement)?.contains(parentRef.current)) {
         dispatch({ type: "CHANGE_HOVERED", data: null });
       }
     },
