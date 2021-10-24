@@ -8,8 +8,7 @@ _Read me_ to be updated...
 
 ### To do
 
-- **[PRIORITY]** Enhance performance for long lists. Performance bottleneck is on drop line, which triggers a whole context update everytime there's a change in the drop position while dragging
-- **[uncertain??]** Remove from exports context state (useTreeDnDState) as it is too unperformant to use.
+- Optimize further the performance for trees with many nodes
 
 ###
 
