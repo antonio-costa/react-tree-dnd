@@ -1,12 +1,7 @@
-import React, { useState, useRef, useEffect, memo } from "react";
-import { useTreeDnDState } from "./TreeDnD";
-import {
-  editNode,
-  isDirectory,
-  isDirectoryEmpty,
-  isDirectoryExpanded,
-  nodeIsParent,
-} from "./helpers";
+import React, { useState, useRef, useEffect, memo, useCallback } from "react";
+import { useAppDispatch, useAppSelector } from "../store";
+import { treeActions } from "../store/tree-slice";
+import { nodeIsParent } from "./helpers";
 import { DropPosition, TreeNodeDraggableProps } from "./types";
 
 export const TreeNodeDraggable: React.FC<
@@ -17,19 +12,16 @@ export const TreeNodeDraggable: React.FC<
     children,
     handleRef,
     previewRef,
-    dropRef,
     expandRef,
     clickRef,
-    ...rest
+    events,
+    addRef,
+    treeId,
   }) => {
     const ref = useRef<HTMLDivElement>(null);
     const [draggable, setDraggable] = useState<boolean>(false);
-    const [state, dispatch] = useTreeDnDState();
-
-    useEffect(() => {
-      if (!ref.current) return;
-      dispatch({ type: "CHANGE_REFS", data: { id: node.id, ref } });
-    }, [ref, dispatch, node.id]);
+    const rdispatch = useAppDispatch();
+    const dragging = useAppSelector((state) => state.dragging[treeId]);
 
     // if an handle exists, set the node only draggable when clicking the handle
     useEffect(() => {
@@ -73,15 +65,14 @@ export const TreeNodeDraggable: React.FC<
         // if folder toggle then don't act as a click
         e.stopPropagation();
 
-        // emit onChange event
-        state.events.onChange(
-          editNode(node.id, { expanded: !node.expanded }, state.tree.children)
-        );
+        // emit events
+        if (events.onExpandedToggle)
+          events.onExpandedToggle(node, !node.expanded);
 
-        // emit event if exists
-        if (state.events.onExpandedToggle) {
-          state.events.onExpandedToggle(node, !node.expanded);
-        }
+        events.onChange({
+          type: "edit",
+          data: { nodeId: node.id, data: { expanded: !node.expanded } },
+        });
       };
 
       // if there's a handle, set the DOM Event listeners
@@ -92,7 +83,7 @@ export const TreeNodeDraggable: React.FC<
 
         expandRefC.current.removeEventListener("click", onClick);
       };
-    }, [expandRef, node, state.events, dispatch, state.tree.children]);
+    }, [expandRef, node, events]);
 
     // inject events into clickRef
     useEffect(() => {
@@ -103,10 +94,10 @@ export const TreeNodeDraggable: React.FC<
       if (!clickRefC.current) return;
 
       const onClick = (e: MouseEvent) => {
-        if (!state.events.onClick) return;
+        if (!events.onClick) return;
 
         // emit event if exists
-        state.events.onClick(node);
+        events.onClick(node);
       };
 
       // if there's a handle, set the DOM Event listeners
@@ -117,45 +108,48 @@ export const TreeNodeDraggable: React.FC<
 
         clickRefC.current.removeEventListener("click", onClick);
       };
-    }, [clickRef, node, state.events, dispatch]);
+    }, [clickRef, node, events]);
 
-    const DraggableProps: React.HTMLAttributes<HTMLDivElement> = {
-      draggable,
-      onDrop: (e: React.DragEvent) => {
+    // DRAG EVENTS
+    const onDrop = useCallback(
+      (e: React.DragEvent) => {
+        const draggingNode = dragging;
         // only execute if dragging in this context
-        if (!state.dragging) return;
+        if (!draggingNode) return;
 
         // update context stopped dragging and hovering
-        if (state.hovered?.nodeId === node.id) {
-          dispatch({
-            type: "DROP",
-            data: { nodeId: state.dragging, target: state.hovered },
-          });
-
-          dispatch({ type: "CHANGE_HOVERED", data: null });
-          dispatch({ type: "CHANGE_DRAGGING", data: null });
-        }
+        rdispatch(treeActions.drop(treeId));
+        rdispatch(treeActions.updateHovered({ treeId, data: null }));
+        rdispatch(treeActions.updateDragging({ treeId, data: null }));
       },
-      onDragEnd: (e: React.DragEvent) => {
+      [rdispatch, dragging, treeId]
+    );
+
+    const onDragEnd = useCallback(
+      (e: React.DragEvent) => {
+        const draggingNode = dragging;
         // only execute if dragging in this context
-        if (!state.dragging) return;
+        if (!draggingNode) return;
 
         if (handleRef?.current) {
           setDraggable(false);
         }
         // update context stopped dragging and hovering
-        dispatch({ type: "CHANGE_HOVERED", data: null });
-        dispatch({ type: "CHANGE_DRAGGING", data: null });
+        rdispatch(treeActions.updateHovered({ treeId, data: null }));
+        rdispatch(treeActions.updateDragging({ treeId, data: null }));
       },
-      onDragEnter: (e: React.DragEvent) => {
-        e.preventDefault();
-      },
-      onDragOver: (e: React.DragEvent) => {
+      [dragging, handleRef, rdispatch, treeId]
+    );
+    const onDragEnter = useCallback((e: React.DragEvent) => {
+      e.preventDefault();
+    }, []);
+    const onDragOver = useCallback(
+      (e: React.DragEvent) => {
         // don't trigger self and don't execute if not dragging in this context
-        if (!state.dragging) return;
-        if (state.dragging === node.id) return;
+        if (!dragging) return;
+        if (dragging.id === node.id) return;
         // can't hover if dragging node is parent of this
-        if (nodeIsParent(state.dragging, node.id, state.tree.children)) return;
+        if (nodeIsParent(dragging, node.id)) return;
         // only the shallowest child should be triggered
         e.stopPropagation();
         // droppable
@@ -167,36 +161,37 @@ export const TreeNodeDraggable: React.FC<
         const verticalMousePos: DropPosition = (() => {
           const pos = (e.clientY - elRect.y) / elRect.height;
 
-          if (
-            isDirectory(node.id, state.tree.children) &&
-            (isDirectoryEmpty(node.id, state.tree.children) ||
-              !isDirectoryExpanded(node.id, state.tree.children))
-          ) {
+          if (node.directory && (node.children.length === 0 || node.expanded)) {
             return pos >= 0.7 ? "bot" : pos >= 0.3 ? "inside" : "top";
           } else {
             return pos > 0.5 ? "bot" : "top";
           }
         })();
 
-        if (
-          state.hovered?.nodeId !== node.id ||
-          state.hovered?.position !== verticalMousePos
-        ) {
-          dispatch({
-            type: "CHANGE_HOVERED",
-            data: { nodeId: node.id, position: verticalMousePos },
-          });
-        }
+        // dispatch hovered action,
+        // this will only update the state
+        // if there is actually a change (verified in the store)
+        rdispatch(
+          treeActions.updateHovered({
+            treeId,
+            data: {
+              nodeId: node.id,
+              position: verticalMousePos,
+            },
+          })
+        );
       },
-      onDragStart: (e: React.DragEvent) => {
-        if (!draggable) return;
+      [dragging, node, rdispatch, treeId]
+    );
 
+    const onDragStart = useCallback(
+      (e: React.DragEvent) => {
         // stop propagation otherwise the dragstart will propagate
         // through parents until reaching the root node element
         e.stopPropagation();
 
         // update context started draging
-        dispatch({ type: "CHANGE_DRAGGING", data: node.id });
+        rdispatch(treeActions.updateDragging({ treeId, data: node }));
 
         // set the drag preview
         if (previewRef?.current) {
@@ -205,10 +200,19 @@ export const TreeNodeDraggable: React.FC<
           e.dataTransfer.setDragImage(ref.current, 0, 0);
         }
       },
-    };
+      [node, previewRef, rdispatch, treeId]
+    );
 
     return (
-      <div ref={ref} {...DraggableProps} {...rest}>
+      <div
+        ref={(ref) => addRef(node.id, ref)}
+        onDrop={onDrop}
+        onDragEnd={onDragEnd}
+        onDragStart={onDragStart}
+        onDragOver={onDragOver}
+        onDragEnter={onDragEnter}
+        draggable={draggable}
+      >
         {children}
       </div>
     );

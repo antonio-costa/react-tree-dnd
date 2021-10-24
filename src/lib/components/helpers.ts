@@ -25,12 +25,7 @@ export const getParent = (
     return null;
   }, null as TreeNode | null);
 };
-export const nodeIsParent = (
-  nodeId: string,
-  childId: string,
-  treeChildren: TreeNode[]
-): boolean => {
-  const node = getNode(nodeId, treeChildren);
+export const nodeIsParent = (node: TreeNode, childId: string): boolean => {
   if (!node?.directory) return false;
 
   return !!getNode(childId, node?.children);

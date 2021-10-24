@@ -1,42 +1,12 @@
-import React, {
-  createContext,
-  Reducer,
-  useContext,
-  useReducer,
-  useEffect,
-  useRef,
-  useState,
-  useMemo,
-  useCallback,
-} from "react";
-import { TreeDnDProps } from "..";
-import { addNode, editNode, getNode, moveNode, removeNode } from "./helpers";
-import {
-  DropLineInjectedStyles,
-  NodeDropPosition,
-  NodeHovered,
-  TreeContext,
-  TreeContextAction,
-  TreeEvents,
-  TreeIdentifier,
-  TreeNode,
-} from "./types";
+import React, { useEffect, useRef, useMemo, useCallback } from "react";
+import { TreeDnDProps, TreeNodeRefs } from "..";
+import { DropLineInjectedStyles, NodeHovered } from "./types";
 
-export const DnDTreeContext = createContext<
-  [TreeContext, React.Dispatch<TreeContextAction>]
->([
-  {
-    tree: { id: "", children: [] },
-    dragging: null,
-    hovered: null,
-    drop: null,
-    events: { onChange: () => {} },
-    refs: {},
-  },
-  () => {},
-]);
+import { Provider } from "react-redux";
+import { useAppDispatch, useAppSelector, store } from "../store";
+import { treeActions } from "../store/tree-slice";
 
-export const TreeDnD: React.VFC<TreeDnDProps> = ({
+export const TreeDnDProvided: React.FC<TreeDnDProps> = ({
   tree,
   onChange,
   onClick,
@@ -47,54 +17,53 @@ export const TreeDnD: React.VFC<TreeDnDProps> = ({
   dropLineRenderer: DropLineRenderer,
   directoryHoveredClass,
 }) => {
+  // tree refs
+  const refs = useRef<TreeNodeRefs>({});
+
   // keep track of old states so that events are only emitted if required
-  const wasDragging = useRef<string | null>(null);
+  const wasDragging = useRef<string | undefined>();
   const wasHovering = useRef<NodeHovered | null>(null);
   const parentRef = useRef<HTMLDivElement>(null);
 
-  // loop through tree and render the nodes thorugh the renderer...
-  const reducer = (state: TreeContext, action: TreeContextAction) => {
-    switch (action.type) {
-      case "CHANGE_TREE":
-        return { ...state, tree: action.data };
-      case "CHANGE_DRAGGING":
-        return { ...state, dragging: action.data };
-      case "CHANGE_HOVERED":
-        return { ...state, hovered: action.data };
-      case "SET_EVENTS":
-        const events = (
-          Object.keys(action.data) as (keyof TreeEvents)[]
-        ).reduce((prev, curr) => {
-          if (action.data[curr]) return { ...prev, [curr]: action.data[curr] };
-          return prev;
-        }, {} as TreeEvents);
+  // retrieve from redux store
+  const rdispatch = useAppDispatch();
 
-        return { ...state, events: { ...events } };
-      case "DROP":
-        return { ...state, drop: action.data };
-      case "CHANGE_REFS":
-        return {
-          ...state,
-          refs: { ...state.refs, [action.data.id]: action.data.ref },
-        };
-    }
-  };
+  const hovered = useAppSelector((state) => state.hovered[tree.id]);
+  const drop = useAppSelector((state) => state.drop[tree.id]);
+  const dragging = useAppSelector((state) => state.dragging[tree.id]);
+  const treeChildren = useAppSelector((state) => state.tree[tree.id]?.children);
 
-  const [state, dispatch] = useReducer<Reducer<TreeContext, TreeContextAction>>(
-    reducer,
-    {
-      tree,
-      dragging: null,
-      hovered: null,
-      drop: null,
-      events: { onChange: () => {} },
-      refs: {},
+  // create tree on store
+  useEffect(() => {
+    if (!treeChildren) {
+      rdispatch(treeActions.createTree(tree));
     }
+  }, [tree, rdispatch, treeChildren]);
+
+  // events prop
+  const events = useMemo(
+    () => ({
+      onChange,
+      onClick,
+      onExpandedToggle,
+      onDragStateChange,
+      onDropPositionChange,
+    }),
+    [
+      onChange,
+      onClick,
+      onExpandedToggle,
+      onDragStateChange,
+      onDropPositionChange,
+    ]
   );
+
   // change tree state
   useEffect(() => {
-    dispatch({ type: "CHANGE_TREE", data: tree });
-  }, [tree, dispatch]);
+    rdispatch(
+      treeActions.updateTreeChildren({ treeId: tree.id, data: tree.children })
+    );
+  }, [tree, rdispatch]);
 
   // emit events
   // onDropPositionChange
@@ -102,11 +71,12 @@ export const TreeDnD: React.VFC<TreeDnDProps> = ({
     // check if there was any change to the hovered element
     // (this avoid any false triggers made by state.events or state.refs)
     if (
-      state.hovered === wasHovering.current ||
-      (state.hovered?.nodeId === wasHovering.current?.nodeId &&
-        state.hovered?.position === wasHovering.current?.position)
+      hovered === wasHovering.current ||
+      (hovered?.nodeId === wasHovering.current?.nodeId &&
+        hovered?.position === wasHovering.current?.position)
     )
       return;
+
     // if dragged "inside" a directory
     if (directoryHoveredClass) {
       // remove all existing stylings
@@ -114,71 +84,55 @@ export const TreeDnD: React.VFC<TreeDnDProps> = ({
         .querySelector("." + directoryHoveredClass)
         ?.classList.remove(directoryHoveredClass);
       // re-add stylings if it is hovering "inside" de node
-      if (state.hovered?.position === "inside") {
-        const hoveredRef = state.refs[state.hovered?.nodeId]?.current;
+      if (hovered?.position === "inside") {
+        const hoveredRef = refs.current[hovered.nodeId];
         hoveredRef?.classList.add(directoryHoveredClass);
       }
     }
 
     // emit onDropPositionChange
-    if (state.events.onDropPositionChange) {
-      if (state.hovered) {
-        state.events.onDropPositionChange({
-          nodeId: state.hovered.nodeId,
-          position: state.hovered.position,
+    if (events.onDropPositionChange) {
+      if (hovered) {
+        events.onDropPositionChange({
+          nodeId: hovered.nodeId,
+          position: hovered.position,
         });
       } else {
-        state.events.onDropPositionChange(null);
+        events.onDropPositionChange(null);
       }
     }
 
-    wasHovering.current = state.hovered;
-  }, [state.events, state.hovered, directoryHoveredClass, state.refs]);
+    wasHovering.current = hovered;
+  }, [events, hovered, directoryHoveredClass]);
 
   // emit event onDragStateChange
   useEffect(() => {
-    if (state.dragging === wasDragging.current) return;
+    if (dragging?.id === wasDragging.current) return;
 
-    if (state.events.onDragStateChange) {
-      if (state.dragging) {
-        const node = getNode(state.dragging, state.tree.children);
-        state.events.onDragStateChange(true, node || undefined);
+    if (events.onDragStateChange) {
+      if (dragging) {
+        events.onDragStateChange(true, dragging || undefined);
       } else {
-        state.events.onDragStateChange(false);
+        events.onDragStateChange(false);
       }
     }
-    wasDragging.current = state.dragging;
-  }, [state.events, state.dragging, state.tree.children]);
+    wasDragging.current = dragging?.id;
+  }, [events, dragging]);
 
+  // emit onChange
   // item is dropped for 1 tick, then it's removed
   useEffect(() => {
     // move node if it was dropped
-    if (state.drop) {
-      dispatch({ type: "DROP", data: null });
-      state.events.onChange(moveNode(state.drop, state.tree.children));
+    if (drop && drop.target) {
+      rdispatch(treeActions.dropEnd(tree.id));
+      events.onChange({
+        type: "move",
+        data: { nodeId: drop.nodeId, position: drop.target },
+      });
     }
-  }, [state.drop, state.events, state.tree.children]);
+  }, [drop, events, treeChildren, rdispatch, tree.id]);
 
-  // update events if changed
-  useEffect(() => {
-    dispatch({
-      type: "SET_EVENTS",
-      data: {
-        onChange,
-        onClick,
-        onExpandedToggle,
-        onDragStateChange,
-        onDropPositionChange,
-      },
-    });
-  }, [
-    onChange,
-    onClick,
-    onExpandedToggle,
-    onDragStateChange,
-    onDropPositionChange,
-  ]);
-
+  // update dropline styles
   const dropLineInjectedStyles: DropLineInjectedStyles = useMemo(() => {
     const noDropLine: DropLineInjectedStyles = {
       position: "absolute",
@@ -188,17 +142,18 @@ export const TreeDnD: React.VFC<TreeDnDProps> = ({
       width: 0,
       pointerEvents: "none",
     };
-    if (state.hovered?.nodeId) {
-      const targetEl = state.refs[state.hovered?.nodeId].current;
+    if (hovered?.nodeId) {
+      const targetEl = refs.current[hovered.nodeId];
       const rootEl = parentRef.current;
-      if (!targetEl || !rootEl || state.hovered.position === "inside")
+      if (!targetEl || !rootEl || hovered.position === "inside") {
         return noDropLine;
+      }
 
       const rootRect = rootEl.getBoundingClientRect();
       const targetRect = targetEl.getBoundingClientRect();
 
       const height: number =
-        state.hovered.position === "top" ? 0 : targetEl.offsetHeight;
+        hovered.position === "top" ? 0 : targetEl.offsetHeight;
       const width: number = targetEl.offsetWidth;
 
       return {
@@ -211,72 +166,49 @@ export const TreeDnD: React.VFC<TreeDnDProps> = ({
       };
     }
     return noDropLine;
-  }, [state.hovered, state.refs]);
+  }, [hovered, refs]);
 
+  const addRef = useCallback((nodeId: string, ref: HTMLDivElement) => {
+    refs.current[nodeId] = ref;
+  }, []);
+
+  // update hovered when outisde the tree
   const onDragLeave = useCallback(
     (e: React.DragEvent) => {
       if ((e.relatedTarget as HTMLElement)?.contains(parentRef.current)) {
-        dispatch({ type: "CHANGE_HOVERED", data: null });
+        rdispatch(treeActions.updateHovered({ treeId: tree.id, data: null }));
       }
     },
-    [dispatch]
+    [rdispatch, tree.id]
   );
 
   return (
-    <DnDTreeContext.Provider value={[state, dispatch]}>
-      <div
-        className="root"
-        onDragLeave={onDragLeave}
-        style={{ position: "relative" }}
-        ref={parentRef}
-      >
-        {tree.children.map((node) => (
-          <NodeRenderer {...node} key={node.id} />
-        ))}
-        {state.hovered?.nodeId ? (
-          <DropLineRenderer injectedStyles={{ ...dropLineInjectedStyles }} />
-        ) : null}
-      </div>
-    </DnDTreeContext.Provider>
+    <div
+      className="root"
+      onDragLeave={onDragLeave}
+      style={{ position: "relative" }}
+      ref={parentRef}
+    >
+      {tree.children.map((node) => (
+        <NodeRenderer
+          node={node}
+          events={events}
+          addRef={addRef}
+          treeId={tree.id}
+          key={node.id}
+        />
+      ))}
+      {hovered?.nodeId ? (
+        <DropLineRenderer injectedStyles={{ ...dropLineInjectedStyles }} />
+      ) : null}
+    </div>
   );
 };
 
-export const useTreeDnDState = (): [
-  TreeContext,
-  React.Dispatch<TreeContextAction>
-] => {
-  const [state, dispatch] = useContext(DnDTreeContext);
-  return [state, dispatch];
-};
-
-export const useTreeDnD = (defaultValue: TreeIdentifier) => {
-  const [tree, setTree] = useState<TreeIdentifier>(defaultValue);
-  return {
-    tree,
-    setTree,
-    addNode: (node: TreeNode, position: NodeDropPosition) => {
-      setTree((old) => ({
-        ...old,
-        children: addNode(node, position, old.children),
-      }));
-    },
-    moveNode: (nodeId: string, position: NodeDropPosition) => {
-      setTree((old) => ({
-        ...old,
-        children: moveNode({ nodeId, target: position }, old.children),
-      }));
-    },
-    editNode: (nodeId: string, data: Partial<TreeNode>) => {
-      setTree((old) => ({
-        ...old,
-        children: editNode(nodeId, data, old.children),
-      }));
-    },
-    removeNode: (nodeId: string) => {
-      setTree((old) => ({
-        ...old,
-        children: removeNode(nodeId, old.children),
-      }));
-    },
-  };
+export const TreeDnD: React.FC<TreeDnDProps> = (props) => {
+  return (
+    <Provider store={store}>
+      <TreeDnDProvided {...props} />
+    </Provider>
+  );
 };
