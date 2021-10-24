@@ -51,9 +51,13 @@ const { tree, setTree } = useTreeDnD({
   ],
 });
 
-const onChange = (treeChildren: TreeNode[]) => {
-  setTree((old) => ({ ...old, children: treeChildren }));
-};
+const onChange = useCallback(
+  (change: TreeChange) => {
+    applyChange(change);
+  },
+  [applyChange]
+);
+
 return (
   <div style={{ width: 200 }}>
     <TreeDnD
@@ -61,6 +65,7 @@ return (
       onChange={onChange}
       renderer={Node}
       dropLineRenderer={DropLine}
+      directoryHoveredClass={"directory-hovered"}
     />
   </div>
 );
