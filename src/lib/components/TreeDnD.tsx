@@ -175,7 +175,11 @@ export const TreeDnDProvided: React.FC<TreeDnDProps> = ({
   // update hovered when outisde the tree
   const onDragLeave = useCallback(
     (e: React.DragEvent) => {
-      if ((e.relatedTarget as HTMLElement)?.contains(parentRef.current)) {
+      const relatedTarget = e.relatedTarget as HTMLElement;
+      if (
+        relatedTarget?.contains(parentRef.current) ||
+        !parentRef?.current?.contains(relatedTarget)
+      ) {
         rdispatch(treeActions.updateHovered({ treeId: tree.id, data: null }));
       }
     },

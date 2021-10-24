@@ -147,11 +147,15 @@ export const TreeNodeDraggable: React.FC<
       (e: React.DragEvent) => {
         // don't trigger self and don't execute if not dragging in this context
         if (!dragging) return;
-        if (dragging.id === node.id) return;
-        // can't hover if dragging node is parent of this
-        if (nodeIsParent(dragging, node.id)) return;
         // only the shallowest child should be triggered
         e.stopPropagation();
+        if (dragging.id === node.id) {
+          rdispatch(treeActions.updateHovered({ treeId, data: null }));
+          return;
+        }
+        // can't hover if dragging node is parent of this
+        if (nodeIsParent(dragging, node.id)) return;
+
         // droppable
         e.preventDefault();
         // where it is being dragged over (top or bot 50%)
@@ -161,7 +165,10 @@ export const TreeNodeDraggable: React.FC<
         const verticalMousePos: DropPosition = (() => {
           const pos = (e.clientY - elRect.y) / elRect.height;
 
-          if (node.directory && (node.children.length === 0 || node.expanded)) {
+          if (
+            node.directory &&
+            (node.children.length === 0 || !node.expanded)
+          ) {
             return pos >= 0.7 ? "bot" : pos >= 0.3 ? "inside" : "top";
           } else {
             return pos > 0.5 ? "bot" : "top";

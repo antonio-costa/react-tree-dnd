@@ -15,7 +15,7 @@ import { ReactComponent as IconFolder } from "./lib/components/svg/folder.svg";
 import { ReactComponent as IconFolderOpen } from "./lib/components/svg/folder-open.svg";
 import { ReactComponent as IconFile } from "./lib/components/svg/file.svg";
 
-const stressTest: TreeNode[] = Array.from(Array(1000).keys()).map((id) =>
+const stressTest: TreeNode[] = Array.from(Array(100).keys()).map((id) =>
   id % 2
     ? {
         id: "" + id,
@@ -81,7 +81,7 @@ function App() {
         dropLineRenderer={DropLine}
         directoryHoveredClass={"directory-hovered"}
       />
-      ----
+      <div>---</div>
       <TreeDnD
         tree={tree2}
         onChange={onChange2}
