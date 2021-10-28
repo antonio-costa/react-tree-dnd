@@ -14,6 +14,8 @@ import "./styles.css";
 import { ReactComponent as IconFolder } from "./lib/components/svg/folder.svg";
 import { ReactComponent as IconFolderOpen } from "./lib/components/svg/folder-open.svg";
 import { ReactComponent as IconFile } from "./lib/components/svg/file.svg";
+import { TreeDnDProvider } from "./lib/components/TreeDnD";
+import { getNode } from "./lib/components/helpers";
 
 const stressTest: TreeNode[] = Array.from(Array(100).keys()).map((id) =>
   id % 2
@@ -73,28 +75,49 @@ function App() {
   );
 
   return (
-    <div style={{ width: 200 }}>
-      <TreeDnD
-        tree={tree}
-        onChange={onChange}
-        renderer={Node}
-        dropLineRenderer={DropLine}
-        directoryHoveredClass={"directory-hovered"}
-      />
-      <div>---</div>
-      <TreeDnD
-        tree={tree2}
-        onChange={onChange2}
-        renderer={Node}
-        dropLineRenderer={DropLine}
-        directoryHoveredClass={"directory-hovered2"}
-      />
-    </div>
+    <TreeDnDProvider>
+      <div style={{ width: 200 }}>
+        {!getNode("EXT:1", tree.children) ? (
+          <TreeNodeDraggable
+            node={{
+              id: "EXT:1",
+              title: "EXTERNAL NODE",
+              directory: false,
+              external: true,
+            }}
+            treeId={"1"}
+            onDragEnd={(e) => {
+              console.log("teste");
+            }}
+          >
+            external node draggable!
+          </TreeNodeDraggable>
+        ) : null}
+
+        <div>---</div>
+        <TreeDnD
+          tree={tree}
+          onChange={onChange}
+          renderer={Node}
+          dropLineRenderer={DropLine}
+          directoryHoveredClass={"directory-hovered"}
+        />
+        <div>---</div>
+        <TreeDnD
+          tree={tree2}
+          onChange={onChange2}
+          renderer={Node}
+          dropLineRenderer={DropLine}
+          directoryHoveredClass={"directory-hovered2"}
+        />
+      </div>
+    </TreeDnDProvider>
   );
 }
 
 const Node: NodeRenderer = React.memo(({ node, ...rest }) => {
   const expandRef = useRef<HTMLDivElement>(null);
+  const handleRef = useRef<HTMLDivElement>(null);
   const icon_size = 12;
 
   const NodeIcon = !node.directory
@@ -107,6 +130,7 @@ const Node: NodeRenderer = React.memo(({ node, ...rest }) => {
     <TreeNodeDraggable
       node={node}
       expandRef={node.directory ? expandRef : undefined}
+      handleRef={handleRef}
       {...rest}
     >
       <div
@@ -119,7 +143,7 @@ const Node: NodeRenderer = React.memo(({ node, ...rest }) => {
       >
         <div>
           <span style={{ paddingRight: 4 }}>
-            <NodeIcon width={icon_size} height={icon_size} />
+            <NodeIcon ref={handleRef} width={icon_size} height={icon_size} />
           </span>
           {node.title}
         </div>

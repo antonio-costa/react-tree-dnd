@@ -88,7 +88,7 @@ export const moveNode = (
 ): TreeNode[] => {
   if (!change.target) return treeChildren;
 
-  const node = getNode(change.nodeId, treeChildren);
+  const node = getNode(change.node.id, treeChildren);
   if (!node) return treeChildren;
 
   return addNode(node, change.target, removeNode(node.id, treeChildren));

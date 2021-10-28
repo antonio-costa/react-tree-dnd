@@ -5,7 +5,7 @@ import { nodeIsParent } from "./helpers";
 import { DropPosition, TreeNodeDraggableProps } from "./types";
 
 export const TreeNodeDraggable: React.FC<
-  TreeNodeDraggableProps & React.HTMLProps<HTMLDivElement>
+  TreeNodeDraggableProps & React.HTMLProps<Element>
 > = memo(
   ({
     node,
@@ -14,7 +14,7 @@ export const TreeNodeDraggable: React.FC<
     previewRef,
     expandRef,
     clickRef,
-    events,
+    treeEvents,
     addRef,
     treeId,
   }) => {
@@ -66,10 +66,11 @@ export const TreeNodeDraggable: React.FC<
         e.stopPropagation();
 
         // emit events
-        if (events.onExpandedToggle)
-          events.onExpandedToggle(node, !node.expanded);
+        if (treeEvents?.onExpandedToggle)
+          treeEvents.onExpandedToggle(node, !node.expanded);
 
-        events.onChange({
+        // if this is an external node then there is no onChange event
+        treeEvents?.onChange({
           type: "edit",
           data: { nodeId: node.id, data: { expanded: !node.expanded } },
         });
@@ -83,7 +84,7 @@ export const TreeNodeDraggable: React.FC<
 
         expandRefC.current.removeEventListener("click", onClick);
       };
-    }, [expandRef, node, events]);
+    }, [expandRef, node, treeEvents]);
 
     // inject events into clickRef
     useEffect(() => {
@@ -94,10 +95,10 @@ export const TreeNodeDraggable: React.FC<
       if (!clickRefC.current) return;
 
       const onClick = (e: MouseEvent) => {
-        if (!events.onClick) return;
+        if (!treeEvents?.onClick) return;
 
         // emit event if exists
-        events.onClick(node);
+        treeEvents.onClick(node);
       };
 
       // if there's a handle, set the DOM Event listeners
@@ -108,14 +109,13 @@ export const TreeNodeDraggable: React.FC<
 
         clickRefC.current.removeEventListener("click", onClick);
       };
-    }, [clickRef, node, events]);
-
+    }, [clickRef, node, treeEvents]);
     // DRAG EVENTS
     const onDrop = useCallback(
       (e: React.DragEvent) => {
-        const draggingNode = dragging;
+        console.log(dragging);
         // only execute if dragging in this context
-        if (!draggingNode) return;
+        if (!dragging) return;
 
         // update context stopped dragging and hovering
         rdispatch(treeActions.drop(treeId));
@@ -212,7 +212,7 @@ export const TreeNodeDraggable: React.FC<
 
     return (
       <div
-        ref={(ref) => addRef(node.id, ref)}
+        ref={(ref) => addRef && addRef(node.id, ref)}
         onDrop={onDrop}
         onDragEnd={onDragEnd}
         onDragStart={onDragStart}

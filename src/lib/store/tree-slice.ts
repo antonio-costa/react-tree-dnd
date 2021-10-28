@@ -48,7 +48,7 @@ const treeSlice = createSlice({
       // should this be a thunk ???
       if (draggingNode) {
         state.drop[treeId] = {
-          nodeId: draggingNode.id,
+          node: draggingNode,
           target: state.hovered[treeId],
         };
       }

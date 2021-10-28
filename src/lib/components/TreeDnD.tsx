@@ -6,7 +6,7 @@ import { Provider } from "react-redux";
 import { useAppDispatch, useAppSelector, store } from "../store";
 import { treeActions } from "../store/tree-slice";
 
-export const TreeDnDProvided: React.FC<TreeDnDProps> = ({
+export const TreeDnD: React.FC<TreeDnDProps> = ({
   tree,
   onChange,
   onClick,
@@ -41,7 +41,7 @@ export const TreeDnDProvided: React.FC<TreeDnDProps> = ({
   }, [tree, rdispatch, treeChildren]);
 
   // events prop
-  const events = useMemo(
+  const treeEvents = useMemo(
     () => ({
       onChange,
       onClick,
@@ -91,33 +91,33 @@ export const TreeDnDProvided: React.FC<TreeDnDProps> = ({
     }
 
     // emit onDropPositionChange
-    if (events.onDropPositionChange) {
+    if (treeEvents.onDropPositionChange) {
       if (hovered) {
-        events.onDropPositionChange({
+        treeEvents.onDropPositionChange({
           nodeId: hovered.nodeId,
           position: hovered.position,
         });
       } else {
-        events.onDropPositionChange(null);
+        treeEvents.onDropPositionChange(null);
       }
     }
 
     wasHovering.current = hovered;
-  }, [events, hovered, directoryHoveredClass]);
+  }, [treeEvents, hovered, directoryHoveredClass]);
 
   // emit event onDragStateChange
   useEffect(() => {
     if (dragging?.id === wasDragging.current) return;
 
-    if (events.onDragStateChange) {
+    if (treeEvents.onDragStateChange) {
       if (dragging) {
-        events.onDragStateChange(true, dragging || undefined);
+        treeEvents.onDragStateChange(true, dragging || undefined);
       } else {
-        events.onDragStateChange(false);
+        treeEvents.onDragStateChange(false);
       }
     }
     wasDragging.current = dragging?.id;
-  }, [events, dragging]);
+  }, [treeEvents, dragging]);
 
   // emit onChange
   // item is dropped for 1 tick, then it's removed
@@ -125,12 +125,26 @@ export const TreeDnDProvided: React.FC<TreeDnDProps> = ({
     // move node if it was dropped
     if (drop && drop.target) {
       rdispatch(treeActions.dropEnd(tree.id));
-      events.onChange({
-        type: "move",
-        data: { nodeId: drop.nodeId, position: drop.target },
-      });
+      if (drop.node)
+        if (drop.node.external) {
+          const newDropNode = { ...drop.node };
+          delete newDropNode.external;
+
+          treeEvents.onChange({
+            type: "add",
+            data: {
+              node: newDropNode,
+              position: drop.target,
+            },
+          });
+        } else {
+          treeEvents.onChange({
+            type: "move",
+            data: { node: drop.node, position: drop.target },
+          });
+        }
     }
-  }, [drop, events, treeChildren, rdispatch, tree.id]);
+  }, [drop, treeEvents, treeChildren, rdispatch, tree.id]);
 
   // update dropline styles
   const dropLineInjectedStyles: DropLineInjectedStyles = useMemo(() => {
@@ -196,7 +210,7 @@ export const TreeDnDProvided: React.FC<TreeDnDProps> = ({
       {tree.children.map((node) => (
         <NodeRenderer
           node={node}
-          events={events}
+          treeEvents={treeEvents}
           addRef={addRef}
           treeId={tree.id}
           key={node.id}
@@ -209,10 +223,6 @@ export const TreeDnDProvided: React.FC<TreeDnDProps> = ({
   );
 };
 
-export const TreeDnD: React.FC<TreeDnDProps> = (props) => {
-  return (
-    <Provider store={store}>
-      <TreeDnDProvided {...props} />
-    </Provider>
-  );
+export const TreeDnDProvider: React.FC<{}> = (props) => {
+  return <Provider store={store}>{props.children}</Provider>;
 };

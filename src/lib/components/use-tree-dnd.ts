@@ -16,10 +16,10 @@ export const useTreeDnD = (defaultValue: TreeIdentifier) => {
   );
 
   const moveNodeState = useCallback(
-    (nodeId: string, position: NodeDropPosition) => {
+    (node: TreeNode, position: NodeDropPosition) => {
       setTree((old) => ({
         ...old,
-        children: moveNode({ nodeId, target: position }, old.children),
+        children: moveNode({ node, target: position }, old.children),
       }));
     },
     []
@@ -51,8 +51,8 @@ export const useTreeDnD = (defaultValue: TreeIdentifier) => {
           return;
         }
         case "move": {
-          const { nodeId, position } = change.data;
-          moveNodeState(nodeId, position);
+          const { node, position } = change.data;
+          moveNodeState(node, position);
           return;
         }
         case "edit": {

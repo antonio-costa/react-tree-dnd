@@ -13,6 +13,7 @@ export interface TreeNodeBase {
   title: string;
   directory?: false;
   data?: any;
+  external?: boolean;
 }
 export interface TreeNodeDirectory {
   id: string;
@@ -21,14 +22,17 @@ export interface TreeNodeDirectory {
   data?: any;
   expanded: boolean;
   children: TreeNode[];
+  external?: boolean;
 }
 export type TreeNode = TreeNodeBase | TreeNodeDirectory;
+
 export type NodeRendererProps = {
   node: TreeNode;
-  events: TreeEvents;
+  treeEvents: TreeEvents;
   addRef: any; // CHANGE
   treeId: TreeId;
 };
+
 export type NodeRenderer = React.FC<NodeRendererProps>;
 
 export type DropLineInjectedStyles = {
@@ -66,7 +70,7 @@ export type TreeContext = {
   hovered: { [key: TreeId]: NodeHovered | null };
   drop: { [key: TreeId]: NodeDropped | null };
 };
-export type NodeDropped = { nodeId: string; target: NodeHovered | null };
+export type NodeDropped = { node: TreeNode; target: NodeHovered | null };
 export type NodeHovered = { nodeId: string; position: DropPosition | null };
 export type NodeDropPosition = NodeHovered; // alias
 
@@ -84,8 +88,8 @@ export interface TreeNodeDraggableProps {
   previewRef?: React.MutableRefObject<HTMLElement | null>;
   clickRef?: React.MutableRefObject<HTMLElement | null>;
   node: TreeNode;
-  events: TreeEvents;
-  addRef: any;
+  treeEvents?: TreeEvents;
+  addRef?: any;
   treeId: TreeId;
 }
 export type TreeChange =
@@ -99,7 +103,7 @@ export type TreeChange =
     }
   | {
       type: "move";
-      data: { nodeId: string; position: NodeDropPosition };
+      data: { node: TreeNode; position: NodeDropPosition };
     }
   | {
       type: "edit";
