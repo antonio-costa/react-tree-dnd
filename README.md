@@ -59,15 +59,17 @@ const onChange = useCallback(
 );
 
 return (
-  <div style={{ width: 200 }}>
-    <TreeDnD
-      tree={tree}
-      onChange={onChange}
-      renderer={Node}
-      dropLineRenderer={DropLine}
-      directoryHoveredClass={"directory-hovered"}
-    />
-  </div>
+  <TreeDnDProvider>
+    <div style={{ width: 200 }}>
+      <TreeDnD
+        tree={tree}
+        onChange={onChange}
+        renderer={Node}
+        dropLineRenderer={DropLine}
+        directoryHoveredClass={"directory-hovered"}
+      />
+    </div>
+  </TreeDnDProvider>
 );
 ```
 
