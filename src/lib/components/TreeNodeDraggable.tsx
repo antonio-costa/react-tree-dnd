@@ -17,6 +17,7 @@ export const TreeNodeDraggable: React.FC<
     treeEvents,
     addRef,
     treeId,
+    element: Element,
   }) => {
     const ref = useRef<HTMLDivElement>(null);
     const [draggable, setDraggable] = useState<boolean>(false);
@@ -209,7 +210,18 @@ export const TreeNodeDraggable: React.FC<
       },
       [node, previewRef, rdispatch, treeId]
     );
-
+    if (Element) {
+      return React.cloneElement(Element, {
+        ref: (ref: any) => addRef && addRef(node.id, ref),
+        onDrop,
+        onDragEnd,
+        onDragStart,
+        onDragOver,
+        onDragEnter,
+        draggable,
+        children,
+      });
+    }
     return (
       <div
         ref={(ref) => addRef && addRef(node.id, ref)}

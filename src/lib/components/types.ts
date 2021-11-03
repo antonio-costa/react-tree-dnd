@@ -31,6 +31,7 @@ export type NodeRendererProps = {
   treeEvents: TreeEvents;
   addRef: any; // CHANGE
   treeId: TreeId;
+  element?: JSX.Element;
 };
 
 export type NodeRenderer = React.FC<NodeRendererProps>;
@@ -91,6 +92,7 @@ export interface TreeNodeDraggableProps {
   treeEvents?: TreeEvents;
   addRef?: any;
   treeId: TreeId;
+  element?: JSX.Element;
 }
 export type TreeChange =
   | {
