@@ -14,10 +14,10 @@ export const TreeNodeDraggable: React.FC<
     previewRef,
     expandRef,
     clickRef,
-    treeEvents,
     addRef,
     treeId,
-    element: Element,
+    external,
+    treeEvents,
   }) => {
     const ref = useRef<HTMLDivElement>(null);
     const [draggable, setDraggable] = useState<boolean>(false);
@@ -54,6 +54,7 @@ export const TreeNodeDraggable: React.FC<
 
     // inject events into expandRef
     useEffect(() => {
+      if (external) return;
       if (!expandRef?.current || !node) return;
 
       const expandRefC = { ...expandRef };
@@ -70,7 +71,6 @@ export const TreeNodeDraggable: React.FC<
         if (treeEvents?.onExpandedToggle)
           treeEvents.onExpandedToggle(node, !node.expanded);
 
-        // if this is an external node then there is no onChange event
         treeEvents?.onChange({
           type: "edit",
           data: { nodeId: node.id, data: { expanded: !node.expanded } },
@@ -85,7 +85,7 @@ export const TreeNodeDraggable: React.FC<
 
         expandRefC.current.removeEventListener("click", onClick);
       };
-    }, [expandRef, node, treeEvents]);
+    }, [expandRef, node, treeEvents, external]);
 
     // inject events into clickRef
     useEffect(() => {
@@ -114,7 +114,6 @@ export const TreeNodeDraggable: React.FC<
     // DRAG EVENTS
     const onDrop = useCallback(
       (e: React.DragEvent) => {
-        console.log(dragging);
         // only execute if dragging in this context
         if (!dragging) return;
 
@@ -150,12 +149,12 @@ export const TreeNodeDraggable: React.FC<
         if (!dragging) return;
         // only the shallowest child should be triggered
         e.stopPropagation();
-        if (dragging.id === node.id) {
+        if (dragging.node.id === node.id) {
           rdispatch(treeActions.updateHovered({ treeId, data: null }));
           return;
         }
         // can't hover if dragging node is parent of this
-        if (nodeIsParent(dragging, node.id)) return;
+        if (nodeIsParent(dragging.node, node.id)) return;
 
         // droppable
         e.preventDefault();
@@ -199,7 +198,9 @@ export const TreeNodeDraggable: React.FC<
         e.stopPropagation();
 
         // update context started draging
-        rdispatch(treeActions.updateDragging({ treeId, data: node }));
+        rdispatch(
+          treeActions.updateDragging({ treeId, data: { node, external } })
+        );
 
         // set the drag preview
         if (previewRef?.current) {
@@ -208,20 +209,8 @@ export const TreeNodeDraggable: React.FC<
           e.dataTransfer.setDragImage(ref.current, 0, 0);
         }
       },
-      [node, previewRef, rdispatch, treeId]
+      [node, previewRef, rdispatch, treeId, external]
     );
-    if (Element) {
-      return React.cloneElement(Element, {
-        ref: (ref: any) => addRef && addRef(node.id, ref),
-        onDrop,
-        onDragEnd,
-        onDragStart,
-        onDragOver,
-        onDragEnter,
-        draggable,
-        children,
-      });
-    }
     return (
       <div
         ref={(ref) => addRef && addRef(node.id, ref)}

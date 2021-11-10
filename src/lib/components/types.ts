@@ -22,7 +22,6 @@ export interface TreeNodeDirectory {
   data?: any;
   expanded: boolean;
   children: TreeNode[];
-  external?: boolean;
 }
 export type TreeNode = TreeNodeBase | TreeNodeDirectory;
 
@@ -31,7 +30,6 @@ export type NodeRendererProps = {
   treeEvents: TreeEvents;
   addRef: any; // CHANGE
   treeId: TreeId;
-  element?: JSX.Element;
 };
 
 export type NodeRenderer = React.FC<NodeRendererProps>;
@@ -67,9 +65,11 @@ export type TreeNodeRefs = {
 };
 export type TreeContext = {
   tree: { [key: TreeId]: TreeIdentifier };
-  dragging: { [key: TreeId]: TreeNode | null };
+  dragging: { [key: TreeId]: { node: TreeNode; external?: boolean } | null };
   hovered: { [key: TreeId]: NodeHovered | null };
-  drop: { [key: TreeId]: NodeDropped | null };
+  drop: {
+    [key: TreeId]: { droppedNode: NodeDropped; external?: boolean } | null;
+  };
 };
 export type NodeDropped = { node: TreeNode; target: NodeHovered | null };
 export type NodeHovered = { nodeId: string; position: DropPosition | null };
@@ -83,6 +83,7 @@ export interface TreeEvents {
   onDropPositionChange?: (target: NodeHovered | null) => void;
 }
 export type DropPosition = "top" | "bot" | "inside";
+
 export interface TreeNodeDraggableProps {
   handleRef?: React.MutableRefObject<HTMLElement | null>;
   expandRef?: React.MutableRefObject<HTMLElement | null>;
@@ -92,12 +93,13 @@ export interface TreeNodeDraggableProps {
   treeEvents?: TreeEvents;
   addRef?: any;
   treeId: TreeId;
-  element?: JSX.Element;
+  external?: boolean;
 }
+
 export type TreeChange =
   | {
       type: "add";
-      data: { node: TreeNode; position: NodeDropPosition };
+      data: { node: TreeNode; position: NodeDropPosition; external?: boolean };
     }
   | {
       type: "remove";

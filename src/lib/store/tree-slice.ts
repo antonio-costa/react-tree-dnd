@@ -29,7 +29,12 @@ const treeSlice = createSlice({
         state.tree[treeId].children = data;
       }
     },
-    updateDragging(state, action: PayloadAction<WithTree<TreeNode | null>>) {
+    updateDragging(
+      state,
+      action: PayloadAction<
+        WithTree<{ node: TreeNode; external?: boolean } | null>
+      >
+    ) {
       const { treeId, data } = action.payload;
       state.dragging[treeId] = data;
     },
@@ -46,10 +51,13 @@ const treeSlice = createSlice({
       const treeId = action.payload;
       const draggingNode = state.dragging[treeId];
       // should this be a thunk ???
-      if (draggingNode) {
+      if (draggingNode?.node) {
         state.drop[treeId] = {
-          node: draggingNode,
-          target: state.hovered[treeId],
+          droppedNode: {
+            node: draggingNode.node,
+            target: state.hovered[treeId],
+          },
+          external: draggingNode.external,
         };
       }
     },

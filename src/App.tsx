@@ -83,12 +83,12 @@ function App() {
               id: "EXT:1",
               title: "EXTERNAL NODE",
               directory: false,
-              external: true,
             }}
             treeId={"1"}
             onDragEnd={(e) => {
               console.log("teste");
             }}
+            external
           >
             external node draggable!
           </TreeNodeDraggable>

@@ -107,40 +107,41 @@ export const TreeDnD: React.FC<TreeDnDProps> = ({
 
   // emit event onDragStateChange
   useEffect(() => {
-    if (dragging?.id === wasDragging.current) return;
+    if (dragging?.node.id === wasDragging.current) return;
 
     if (treeEvents.onDragStateChange) {
-      if (dragging) {
-        treeEvents.onDragStateChange(true, dragging || undefined);
+      if (dragging?.node) {
+        treeEvents.onDragStateChange(true, dragging.node || undefined);
       } else {
         treeEvents.onDragStateChange(false);
       }
     }
-    wasDragging.current = dragging?.id;
+    wasDragging.current = dragging?.node.id;
   }, [treeEvents, dragging]);
 
   // emit onChange
   // item is dropped for 1 tick, then it's removed
   useEffect(() => {
     // move node if it was dropped
-    if (drop && drop.target) {
+    if (drop && drop.droppedNode?.target) {
       rdispatch(treeActions.dropEnd(tree.id));
-      if (drop.node)
-        if (drop.node.external) {
-          const newDropNode = { ...drop.node };
-          delete newDropNode.external;
-
+      if (drop.droppedNode.node)
+        if (drop.external) {
           treeEvents.onChange({
             type: "add",
             data: {
-              node: newDropNode,
-              position: drop.target,
+              node: drop.droppedNode.node,
+              position: drop.droppedNode.target,
+              external: true,
             },
           });
         } else {
           treeEvents.onChange({
             type: "move",
-            data: { node: drop.node, position: drop.target },
+            data: {
+              node: drop.droppedNode.node,
+              position: drop.droppedNode.target,
+            },
           });
         }
     }

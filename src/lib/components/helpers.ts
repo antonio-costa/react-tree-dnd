@@ -94,34 +94,6 @@ export const moveNode = (
   return addNode(node, change.target, removeNode(node.id, treeChildren));
 };
 
-export const isDirectoryEmpty = (
-  nodeId: string,
-  treeChildren: TreeNode[]
-): boolean => {
-  return treeChildren.reduce((prev, curr) => {
-    if (prev) return prev;
-    if (curr.id === nodeId && curr.directory && curr.children.length === 0) {
-      return true;
-    }
-    if (curr.directory) return isDirectoryEmpty(nodeId, curr.children);
-    return false;
-  }, false as boolean);
-};
-
-export const isDirectoryExpanded = (
-  nodeId: string,
-  treeChildren: TreeNode[]
-): boolean => {
-  return treeChildren.reduce((prev, curr) => {
-    if (prev) return prev;
-    if (curr.id === nodeId && curr.directory && curr.expanded) {
-      return true;
-    }
-    if (curr.directory) return isDirectoryExpanded(nodeId, curr.children);
-    return false;
-  }, false as boolean);
-};
-
 export const editNode = (
   nodeId: string,
   data: Partial<TreeNode>,
