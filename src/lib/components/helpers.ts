@@ -1,3 +1,4 @@
+import { TreeChange } from "..";
 import { NodeDropped, NodeHovered, TreeNode } from "./types";
 
 export const getNode = (
@@ -128,4 +129,28 @@ export const isDirectory = (
     if (curr.directory) return isDirectory(nodeId, curr.children);
     return false;
   }, false as boolean);
+};
+
+export const applyTreeChange = (
+  change: TreeChange,
+  treeChildren: TreeNode[]
+): TreeNode[] => {
+  switch (change.type) {
+    case "add": {
+      const { node, position } = change.data;
+      return addNode(node, position, treeChildren);
+    }
+    case "move": {
+      const { node, position } = change.data;
+      return moveNode({ node, target: position }, treeChildren);
+    }
+    case "edit": {
+      const { nodeId, data } = change.data;
+      return editNode(nodeId, data, treeChildren);
+    }
+    case "remove": {
+      const { nodeId } = change.data;
+      return removeNode(nodeId, treeChildren);
+    }
+  }
 };
