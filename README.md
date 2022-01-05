@@ -2,8 +2,16 @@
 
 **This README is not complete and is a work in progress.**
 
-- Does not support touch events (yet)
-- Highly optimized to handle thousands of entries (no state updates when dragging)
+Simple drag and drop tree with infinite nesting
+
+Highly optimized to handle thousands of entries (no state updates when dragging)
+
+![ReactDnDTree Preview](preview.gif "ReactDnDTree Preview")
+
+### To Do
+
+- Add support for touch events
+- Animations when dropping items
 
 # Example
 
