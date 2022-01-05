@@ -1,0 +1,23 @@
+ul,
+li {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
+ul {
+  padding-left: 8px;
+}
+ul ul {
+  padding-top: 4px;
+}
+li {
+  padding: 4px 0px;
+}
+.li-styling {
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid black;
+}
+.directory-drop-class .li-styling {
+  border-color: blue;
+}
