@@ -117,8 +117,9 @@ export interface DraggableProps {
   dragPreviewRenderer?: DragPreviewRenderer;
   _nodeEvents?: NodeEvents;
   dragHandleRef?: React.RefObject<any>;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
+
 // Tree DnD Children
 export type InjectDroppable = {
   ref: React.RefObject<any>;

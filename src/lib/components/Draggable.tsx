@@ -82,7 +82,7 @@ export const Draggable = React.memo<DraggableProps>(
         const calcPropLinePos: DropPosition = (() => {
           const pos = (e.clientY - elRect.y) / elRect.height;
 
-          if (node.children?.length === 0 || node.expanded === false) {
+          if (node?.children?.length === 0 || node.expanded === false) {
             return pos >= 0.7 ? "bot" : pos >= 0.3 ? "inside" : "top";
           }
 
