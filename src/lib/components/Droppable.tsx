@@ -185,6 +185,7 @@ export const Droppable: React.VFC<DroppableProps> = ({
     },
     [onDropPositionChange]
   );
+
   const willDrop = useCallback(
     (e: React.DragEvent, node: TreeNode): boolean => {
       // if not dragging through this tree
@@ -251,7 +252,7 @@ export const Droppable: React.VFC<DroppableProps> = ({
       }),
     [parentRef, onDragLeave, _nodeEvents, dragPreviewRenderer, children]
   );
-  
+
   return (
     <>
       {childrenMemoed}

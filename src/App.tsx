@@ -73,18 +73,21 @@ function App() {
         )}
         directoryDropClass="directory-drop-class"
       >
-        {({ injectTree, injectDraggable }: any) => (
-          <ul {...injectTree}>
-            {nodes.map((node) => (
-              <DraggableStyled
-                onClick={onClickNode}
-                key={node.id}
-                node={node}
-                {...injectDraggable}
-              />
-            ))}
-          </ul>
-        )}
+        {({ injectDroppable, injectDraggable }) => {
+          console.log(injectDroppable, injectDraggable);
+          return (
+            <ul {...injectDroppable}>
+              {nodes.map((node) => (
+                <DraggableStyled
+                  onClick={onClickNode}
+                  key={node.id}
+                  node={node}
+                  {...injectDraggable}
+                />
+              ))}
+            </ul>
+          );
+        }}
       </Droppable>
     </div>
   );
