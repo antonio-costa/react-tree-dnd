@@ -39,7 +39,17 @@ function App() {
   const onChange = useCallback((change) => {
     setNodes((old) => applyTreeChange(change, old));
   }, []);
-
+  const onClickNode = useCallback((node, e) => {
+    setNodes((old) =>
+      applyTreeChange(
+        {
+          type: "edit",
+          data: { nodeId: node.id, data: { expanded: !node.expanded } },
+        },
+        old
+      )
+    );
+  }, []);
   return (
     <div className="App">
       <Droppable
@@ -66,7 +76,12 @@ function App() {
         {({ injectTree, injectDraggable }: any) => (
           <ul {...injectTree}>
             {nodes.map((node) => (
-              <DraggableStyled key={node.id} node={node} {...injectDraggable} />
+              <DraggableStyled
+                onClick={onClickNode}
+                key={node.id}
+                node={node}
+                {...injectDraggable}
+              />
             ))}
           </ul>
         )}
@@ -75,20 +90,24 @@ function App() {
   );
 }
 
-const DraggableStyled: React.FC<DraggableProps> = React.memo(
-  ({ node, ...injectDraggable }) => {
+const DraggableStyled: React.FC<DraggableProps & { onClick: any }> = React.memo(
+  ({ node, onClick, ...injectDraggable }) => {
     const dragHandleRef = useRef(null);
     return (
       <Draggable node={node} {...injectDraggable} dragHandleRef={dragHandleRef}>
         <li>
           <div>
             <span ref={dragHandleRef}>[drag handle]</span>
-            {node.title}
+            <span onClick={(e) => onClick(node, e)}>{node.title}</span>
           </div>
           {Array.isArray(node.children) && node.expanded
             ? node.children.map((child) => (
                 <ul key={child.id}>
-                  <DraggableStyled node={child} {...injectDraggable} />
+                  <DraggableStyled
+                    onClick={onClick}
+                    node={child}
+                    {...injectDraggable}
+                  />
                 </ul>
               ))
             : null}
