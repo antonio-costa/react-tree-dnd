@@ -49,13 +49,11 @@ export interface DropLineRendererPortalProps {
 export type DropLineRendererPortal = React.FC<DropLineRendererPortalProps>;
 
 // Drag Preview
-export type DragPreviewRendererProps = {};
-
-export type DragPreviewRenderer = React.FC<DragPreviewRendererProps>;
+export type DragPreviewRenderer = (node: TreeNode) => React.ReactNode;
 
 export type DragPreviewPortalProps = {
   dragging: boolean;
-  renderer: DragPreviewRenderer;
+  renderer: React.ReactNode;
 };
 export type DragPreviewPortalComponent = React.FC<DragPreviewPortalProps>;
 

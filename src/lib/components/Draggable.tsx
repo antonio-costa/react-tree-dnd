@@ -204,7 +204,7 @@ export const Draggable = React.memo<DraggableProps>(
 
           {dragPreviewRenderer && (
             <DragPreviewPortal
-              renderer={dragPreviewRenderer}
+              renderer={dragPreviewRenderer(node)}
               dragging={dragging}
             />
           )}

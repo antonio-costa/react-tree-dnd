@@ -70,7 +70,7 @@ function App() {
             style={{ height: 1, backgroundColor: "blue", ...injectedStyles }}
           />
         )}
-        dragPreviewRenderer={() => (
+        dragPreviewRenderer={(node) => (
           <div
             style={{
               width: 100,
@@ -79,7 +79,7 @@ function App() {
               border: "1px solid black",
             }}
           >
-            preview
+            {node.title}
           </div>
         )}
         directoryDropClass="directory-drop-class"

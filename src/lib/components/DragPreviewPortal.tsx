@@ -3,7 +3,7 @@ import ReactDOM from "react-dom";
 import { DragPreviewPortalComponent } from "./types";
 
 export const DragPreviewPortal: DragPreviewPortalComponent = React.memo(
-  ({ dragging, renderer: Renderer }) => {
+  ({ dragging, renderer }) => {
     const ref = useRef<HTMLDivElement | null>(null);
     const [dragged, setDragged] = useState<boolean>(false);
 
@@ -28,7 +28,7 @@ export const DragPreviewPortal: DragPreviewPortalComponent = React.memo(
       };
     }, [dragging]);
 
-    if (!Renderer || !dragging) return null;
+    if (!renderer || !dragging) return null;
 
     const bodyDom = document.getElementById("root");
     if (!bodyDom) {
@@ -51,7 +51,7 @@ export const DragPreviewPortal: DragPreviewPortalComponent = React.memo(
               zIndex: 99999,
             }}
           >
-            <Renderer />
+            {renderer}
           </div>,
           bodyDom
         )
