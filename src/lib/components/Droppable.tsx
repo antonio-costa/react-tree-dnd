@@ -134,7 +134,7 @@ export const Droppable: React.VFC<DroppableProps> = ({
 
       // inject styles on dropline
       if (ref?.current) {
-        if (position.position === "inside") {
+        if (position.position === "inside" && canDrop) {
           if (directoryDropClass) {
             ref.current.classList.add(directoryDropClass);
           }

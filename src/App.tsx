@@ -4,18 +4,20 @@ import { applyTreeChange } from "./lib/components/helpers";
 import { Droppable } from "./lib/components/Droppable";
 import { DraggableProps, TreeNode } from "./lib/components/types";
 
-const stressTest = Array.from(Array(1000).keys()).map((k) => {
+import "./styles.css";
+
+const stressTest = Array.from(Array(100).keys()).map((k) => {
   if (!(k % 10)) {
     return {
       id: "" + (k + Math.random() * 9999),
       title: "Node for: " + k,
-      expanded: true,
+      expanded: false,
       children: Array.from(Array(5).keys()).map((i) => {
         if (!(k % 3)) {
           return {
             id: k + "c" + (i + Math.random() * 9999),
             title: "Child node " + i + " for: " + k,
-            expanded: true,
+            expanded: false,
             children: [
               {
                 id: k + "gc" + (i + Math.random() * 9999),

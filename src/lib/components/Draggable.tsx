@@ -67,11 +67,6 @@ export const Draggable = React.memo<DraggableProps>(
           return;
         }
 
-        /*if (!canNodeDrop) {
-          onDropPositionChange && onDropPositionChange(null, ref);
-          return;
-        }*/
-
         // emit hovering position
 
         // mouse position relating to box position:
