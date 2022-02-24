@@ -85,7 +85,6 @@ function App() {
         directoryDropClass="directory-drop-class"
       >
         {({ injectDroppable, injectDraggable }) => {
-          console.log(injectDroppable, injectDraggable);
           return (
             <ul {...injectDroppable}>
               {nodes.map((node) => (

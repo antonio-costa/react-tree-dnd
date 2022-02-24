@@ -102,7 +102,8 @@ export type OnTargetDrop = (target: NodeHoveredPosition | null) => void;
 export type CanDrop = (e: React.DragEvent, node: TreeNode) => boolean;
 export type OnDropPositionChange = (
   position: NodeHoveredPosition | null,
-  ref?: React.RefObject<any>
+  ref?: React.RefObject<any>,
+  canDrop?: boolean
 ) => void;
 
 export interface NodeEvents {

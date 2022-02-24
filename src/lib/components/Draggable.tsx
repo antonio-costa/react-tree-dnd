@@ -67,13 +67,10 @@ export const Draggable = React.memo<DraggableProps>(
           return;
         }
 
-        // will check if can be dropped here
-        const canNodeDrop = canDrop && canDrop(e, node);
-        console.log("canNodeDrop:", canNodeDrop);
-        if (!canNodeDrop) {
+        /*if (!canNodeDrop) {
           onDropPositionChange && onDropPositionChange(null, ref);
           return;
-        }
+        }*/
 
         // emit hovering position
 
@@ -90,10 +87,14 @@ export const Draggable = React.memo<DraggableProps>(
           return pos > 0.5 ? "bot" : "top";
         })();
 
+        // will check if can be dropped here
+        const canNodeDrop = canDrop && canDrop(e, node);
+
         onDropPositionChange &&
           onDropPositionChange(
             calcPropLinePos && { node, position: calcPropLinePos },
-            ref
+            ref,
+            canNodeDrop
           );
         dropLinePosition.current = { node, position: calcPropLinePos };
 

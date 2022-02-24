@@ -60,6 +60,7 @@ export const Droppable: React.VFC<DroppableProps> = ({
 }) => {
   const parentRef = useRef<HTMLDivElement>(null);
   const dropLinePosition = useRef<NodeHoveredPosition | null>(null);
+  const canNodeDrop = useRef<boolean>(true);
 
   const [dropLineStyles, setDropLineStyles] =
     useState<DropLineInjectedStyles>(noDropLineStyles);
@@ -109,10 +110,12 @@ export const Droppable: React.VFC<DroppableProps> = ({
   const onDropPositionChange = useCallback(
     (
       position: NodeHoveredPosition | null,
-      ref?: React.RefObject<HTMLDivElement>
+      ref?: React.RefObject<HTMLDivElement>,
+      canDrop?: boolean
     ) => {
       if (position === null) {
         setDropLineStyles(noDropLineStyles);
+        canNodeDrop.current = false;
         directoryDropClass &&
           ref?.current?.classList.remove(directoryDropClass);
         dropLinePosition.current = position;
@@ -136,6 +139,7 @@ export const Droppable: React.VFC<DroppableProps> = ({
             ref.current.classList.add(directoryDropClass);
           }
           setDropLineStyles(noDropLineStyles);
+          canNodeDrop.current = false;
         } else {
           if (directoryDropClass) {
             ref.current.classList.remove(directoryDropClass);
@@ -146,17 +150,23 @@ export const Droppable: React.VFC<DroppableProps> = ({
           const scrollLeft =
             document.documentElement.scrollLeft || window.scrollX;
           if (rect) {
-            setDropLineStyles({
-              position: "absolute",
-              display: "block",
-              left: rect.left + scrollLeft,
-              top:
-                rect.top +
-                (position.position === "bot" ? rect.height : 0) +
-                scrollTop,
-              width: rect.width,
-              pointerEvents: "none",
-            });
+            if (canDrop) {
+              setDropLineStyles({
+                position: "absolute",
+                display: "block",
+                left: rect.left + scrollLeft,
+                top:
+                  rect.top +
+                  (position.position === "bot" ? rect.height : 0) +
+                  scrollTop,
+                width: rect.width,
+                pointerEvents: "none",
+              });
+              canNodeDrop.current = true;
+            } else {
+              setDropLineStyles(noDropLineStyles);
+              canNodeDrop.current = false;
+            }
           }
         }
       }
@@ -187,10 +197,11 @@ export const Droppable: React.VFC<DroppableProps> = ({
         if (!onBeforeDrop) {
           return false;
         }
+
         // dropping in a specific position
         if (dropLinePosition.current) {
           const allowDrop = onBeforeDrop(null, dropLinePosition.current);
-
+          console.log(allowDrop);
           // if the external handler returns a node, allow the drop to be made
           if (allowDrop) {
             e.preventDefault();
