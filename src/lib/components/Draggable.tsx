@@ -10,7 +10,7 @@ import { DraggableProps, DropPosition, NodeHoveredPosition } from "./types";
 
 export const Draggable = React.memo<DraggableProps>(
   ({ node, _nodeEvents, children, dragPreviewRenderer, dragHandleRef }) => {
-    const { onToggleDragging, onTargetDrop, onDropPositionChange, willDrop } =
+    const { onToggleDragging, onTargetDrop, onDropPositionChange, canDrop } =
       _nodeEvents || {};
     const ref = useRef<HTMLElement | null>(null);
     const dropLinePosition = useRef<NodeHoveredPosition | null>(null);
@@ -68,7 +68,8 @@ export const Draggable = React.memo<DraggableProps>(
         }
 
         // will check if can be dropped here
-        const canNodeDrop = willDrop && willDrop(e, node);
+        const canNodeDrop = canDrop && canDrop(e, node);
+        console.log("canNodeDrop:", canNodeDrop);
         if (!canNodeDrop) {
           onDropPositionChange && onDropPositionChange(null, ref);
           return;
@@ -98,7 +99,7 @@ export const Draggable = React.memo<DraggableProps>(
 
         // update drag preview position
       },
-      [node, _nodeEvents, onDropPositionChange, willDrop]
+      [node, _nodeEvents, onDropPositionChange, canDrop]
     );
 
     const onDragEnter = useCallback(

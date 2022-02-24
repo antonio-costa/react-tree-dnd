@@ -35,6 +35,12 @@ const stressTest = Array.from(Array(1000).keys()).map((k) => {
 });
 
 function App() {
+  const onBeforeDrop = useCallback((node, context) => {
+    if (node === null) {
+      return null && { id: "" + Math.random(), title: "Wow " + Math.random() };
+    }
+    return node;
+  }, []);
   const [nodes, setNodes] = useState<TreeNode[]>(stressTest);
   const onChange = useCallback((change) => {
     setNodes((old) => applyTreeChange(change, old));
@@ -52,7 +58,12 @@ function App() {
   }, []);
   return (
     <div className="App">
+      <Draggable node={{ id: "testradawda", title: "aaaaaaa" }}>
+        <div>aaaaaaa</div>
+      </Draggable>
+      ----
       <Droppable
+        onBeforeDrop={onBeforeDrop}
         onChange={onChange}
         dropLineRenderer={({ injectedStyles }) => (
           <div

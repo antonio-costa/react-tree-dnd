@@ -118,21 +118,13 @@ export const Droppable: React.VFC<DroppableProps> = ({
         dropLinePosition.current = position;
         return;
       }
+
       // check if drop position has changed since last time
       if (
         (position === null && dropLinePosition.current === null) ||
         (position?.node === dropLinePosition.current?.node &&
           position?.position === dropLinePosition.current?.position)
       ) {
-        dropLinePosition.current = position;
-        return;
-      }
-      // check if can drop here
-      if (draggingNode?.node.id === "0" && position.node.id === "c0") {
-        setDropLineStyles(noDropLineStyles);
-        directoryDropClass &&
-          ref?.current?.classList.remove(directoryDropClass);
-
         dropLinePosition.current = position;
         return;
       }
@@ -170,7 +162,7 @@ export const Droppable: React.VFC<DroppableProps> = ({
       }
       dropLinePosition.current = position;
     },
-    [dropLinePosition, draggingNode, directoryDropClass]
+    [dropLinePosition, directoryDropClass]
   );
 
   const onDragLeave = useCallback(
@@ -186,7 +178,7 @@ export const Droppable: React.VFC<DroppableProps> = ({
     [onDropPositionChange]
   );
 
-  const willDrop = useCallback(
+  const canDrop = useCallback(
     (e: React.DragEvent, node: TreeNode): boolean => {
       // if not dragging through this tree
       // (it's an external node)
@@ -199,15 +191,16 @@ export const Droppable: React.VFC<DroppableProps> = ({
         if (dropLinePosition.current) {
           const allowDrop = onBeforeDrop(null, dropLinePosition.current);
 
-          // if the external handler returns a node
+          // if the external handler returns a node, allow the drop to be made
           if (allowDrop) {
-            // by default accept everything
             e.preventDefault();
             return true;
           } else {
             return false;
           }
         }
+        // by default reject every external node
+        return false;
       }
       // if dragging inside the tree
       else {
@@ -219,7 +212,7 @@ export const Droppable: React.VFC<DroppableProps> = ({
           return false;
         }
       }
-      // by default accept everything
+      // by default accept everything else
       e.preventDefault();
       return true;
     },
@@ -233,9 +226,9 @@ export const Droppable: React.VFC<DroppableProps> = ({
       onToggleDragging,
       onTargetDrop,
       onDropPositionChange,
-      willDrop,
+      canDrop,
     }),
-    [onToggleDragging, onTargetDrop, onDropPositionChange, willDrop]
+    [onToggleDragging, onTargetDrop, onDropPositionChange, canDrop]
   );
 
   const childrenMemoed = useMemo(

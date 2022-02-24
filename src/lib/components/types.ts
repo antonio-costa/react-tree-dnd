@@ -99,7 +99,7 @@ export interface DroppableRendererProps {
 export type OnNodeHovered = (node: TreeNode) => void;
 export type OnToggleDragging = (dragging: boolean, node?: TreeNode) => void;
 export type OnTargetDrop = (target: NodeHoveredPosition | null) => void;
-export type WillDrop = (e: React.DragEvent, node: TreeNode) => boolean;
+export type CanDrop = (e: React.DragEvent, node: TreeNode) => boolean;
 export type OnDropPositionChange = (
   position: NodeHoveredPosition | null,
   ref?: React.RefObject<any>
@@ -108,7 +108,7 @@ export type OnDropPositionChange = (
 export interface NodeEvents {
   onToggleDragging: OnToggleDragging;
   onTargetDrop: OnTargetDrop;
-  willDrop: WillDrop;
+  canDrop: CanDrop;
   onDropPositionChange: OnDropPositionChange;
 }
 // Draggable
