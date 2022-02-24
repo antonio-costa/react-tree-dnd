@@ -145,7 +145,16 @@ export const Draggable = React.memo<DraggableProps>(
       };
     }, [dragHandleRef]);
 
-    const Child = useMemo(() => React.Children.only(children), [children]);
+    const Child = useMemo(() => {
+      try {
+        return React.Children.only(children);
+      } catch (e) {
+        console.error(
+          "[react-tree-dnd] <Draggable> element must have exactly one child element (no more and no less)"
+        );
+        console.error(e);
+      }
+    }, [children]);
 
     // make sure to not overwrite dragevents
     // these always happen AFTER the droppable has done it's work
