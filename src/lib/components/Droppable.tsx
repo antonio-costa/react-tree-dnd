@@ -201,7 +201,7 @@ export const Droppable: React.VFC<DroppableProps> = ({
         // dropping in a specific position
         if (dropLinePosition.current) {
           const allowDrop = onBeforeDrop(null, dropLinePosition.current);
-          console.log(allowDrop);
+
           // if the external handler returns a node, allow the drop to be made
           if (allowDrop) {
             e.preventDefault();

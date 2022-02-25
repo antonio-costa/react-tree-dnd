@@ -21,8 +21,8 @@ export const DragPreviewPortal: DragPreviewPortalComponent = React.memo(
       }
 
       return () => {
+        document.removeEventListener("drag", onDrag);
         if (dragging) {
-          document.removeEventListener("drag", onDrag);
           setDragged(false);
         }
       };
